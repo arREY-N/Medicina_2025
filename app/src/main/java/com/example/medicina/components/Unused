@@ -1,0 +1,1444 @@
+@Composable
+fun GenericSetScreen(
+    minWidth: Dp = 400.dp,
+    content: @Composable ConstraintLayoutScope.(
+        c1start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c1end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4end: ConstraintLayoutBaseScope.VerticalAnchor
+    ) -> Unit
+) {
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenWidthDp = with(density) { screenWidth.dp }
+
+    val containerWidth = minWidth
+    val edgeMargin = ((screenWidthDp - containerWidth) / 2).coerceAtLeast(24.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = edgeMargin)
+            .verticalScroll(scrollState)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val y = 0.02f
+            val x = (1f - (y * 3)) / 4
+
+            val c1start = createGuidelineFromStart(0f)
+            val c1end = createGuidelineFromStart(x)
+
+            val c2start = createGuidelineFromStart(x + y)
+            val c2end = createGuidelineFromStart((2 * x) + y)
+
+            val c3start = createGuidelineFromStart(2 * (x + y))
+            val c3end = createGuidelineFromStart((3 * x) + (2 * y))
+
+            val c4start = createGuidelineFromStart(3 * (x + y))
+            val c4end = createGuidelineFromStart(1f)
+
+            content(c1start, c1end, c2start, c2end, c3start, c3end, c4start, c4end)
+        }
+    }
+}
+
+
+@Composable
+fun FSetScreen(
+    minWidth: Dp = 400.dp,
+    content: @Composable ConstraintLayoutScope.(
+        c1start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c1end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4end: ConstraintLayoutBaseScope.VerticalAnchor) -> Unit
+){
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenWidthDp = with(density) {screenWidth.dp}
+
+    val containerWidth = minWidth
+
+    val edgeMargin = ((screenWidthDp - containerWidth) / 2).coerceAtLeast(24.dp)
+
+    Column(modifier = Modifier
+        .fillMaxHeight()
+        .padding(horizontal = edgeMargin)
+        .verticalScroll(scrollState)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val y = 0.02f
+            val x = (1f - (y * 3)) / 4
+
+            val c1start = createGuidelineFromStart(0f)
+            val c1end = createGuidelineFromStart(x)
+
+            val c2start = createGuidelineFromStart(x + y)
+            val c2end = createGuidelineFromStart((2 * x) + y)
+
+            val c3start = createGuidelineFromStart(2 * (x + y))
+            val c3end = createGuidelineFromStart((3 * x) + (2 * y))
+
+            val c4start = createGuidelineFromStart(3 * (x + y))
+            val c4end = createGuidelineFromStart(1f)
+
+            content(c1start, c1end, c2start, c2end, c3start, c3end, c4start, c4end)
+        }
+    }
+}
+
+@Composable
+fun TLayoutGrid(
+    modifier: Modifier = Modifier,
+    content: @Composable ConstraintLayoutScope.(
+        c1start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c1end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c2end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c3end: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4start: ConstraintLayoutBaseScope.VerticalAnchor,
+        c4end: ConstraintLayoutBaseScope.VerticalAnchor) -> Unit
+) {
+    ConstraintLayout (
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        val y = 0.02f
+        val x = (1f - (y * 3))/4
+
+        val c1start = createGuidelineFromStart(0f)
+        val c1end = createGuidelineFromStart(x)
+
+        val c2start = createGuidelineFromStart(x+y)
+        val c2end = createGuidelineFromStart((2*x)+y)
+
+        val c3start = createGuidelineFromStart(2*(x+y))
+        val c3end = createGuidelineFromStart((3*x) + (2*y))
+
+        val c4start = createGuidelineFromStart(3*(x+y))
+        val c4end = createGuidelineFromStart(1f)
+        content(c1start, c1end, c2start, c2end, c3start, c3end, c4start, c4end)
+    }
+}
+
+
+@Composable
+fun xInputField(
+    inputName: String = "",
+    inputHint: String = "",
+    inputValue: String = "",
+    onValueChange: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    var isFocused by remember {mutableStateOf(false)}
+
+    Column (modifier = modifier) {
+        Text(
+            modifier = Modifier
+                .padding(start = 16.dp),
+            text = inputName,
+            style = MaterialTheme.typography.labelLarge)
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .border(
+                    width = 1.dp,
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (isFocused) CustomGreen else CustomGray
+                )
+        ) {
+            Row (
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+                    .clip(RoundedCornerShape(20.dp))
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface (
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .border(
+                            width = 1.dp,
+                            shape = RoundedCornerShape(20.dp),
+                            color = if (isFocused) CustomGreen else CustomGray
+                        )
+                ) { }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                BasicTextField(
+                    keyboardOptions = keyboardOptions,
+                    visualTransformation = visualTransformation,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onFocusChanged { focusState -> isFocused = focusState.isFocused },
+                    value = inputValue,
+                    onValueChange = onValueChange,
+                    singleLine = false,
+                    decorationBox = {innerTextField ->
+                        Box(
+                            contentAlignment = Alignment.CenterStart) {
+                            if (inputValue.isEmpty()) {
+                                Text(
+                                    text = inputHint,
+                                    color = CustomGray,
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+
+            InputField(
+                inputName = "Category",
+                inputHint = "Enter category",
+                inputValue = category,
+                onValueChange = { category = it },
+                modifier = Modifier.constrainAs(categoryField) {
+                    top.linkTo(genericNameField.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c1start)
+                    end.linkTo(guidelines.c2end)
+                    width = Dimension.fillToConstraints
+                },
+                width = Dimension.fillToConstraints
+            )
+            InputField(
+                inputName = "Regulation",
+                inputHint = "Enter regulation",
+                inputValue = regulation,
+                onValueChange = { regulation = it },
+                modifier = Modifier.constrainAs(regulationField) {
+                    top.linkTo(genericNameField.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c3start)
+                    end.linkTo(guidelines.c4end)
+                    width = Dimension.fillToConstraints
+                },
+                width = Dimension.fillToConstraints
+            )
+
+
+/*@Composable
+fun HomepageScreen(){
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .verticalScroll(scrollState)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            val y = 0.02f
+            val x = (1f - (y * 3)) / 4
+
+            val c1start = createGuidelineFromStart(0f)
+            val c1end = createGuidelineFromStart(x)
+
+            val c2start = createGuidelineFromStart(x + y)
+            val c2end = createGuidelineFromStart((2 * x) + y)
+
+            val c3start = createGuidelineFromStart(2 * (x + y))
+            val c3end = createGuidelineFromStart((3 * x) + (2 * y))
+
+            val c4start = createGuidelineFromStart(3 * (x + y))
+            val c4end = createGuidelineFromStart(1f)
+
+            val context = LocalContext.current
+
+            var searchItem by remember { mutableStateOf("") }
+
+            val(
+                searchField,
+                searchButton,
+                categoryText,
+                seeAllText,
+                category1,
+                category2,
+                category3,
+                category4,
+                updatesText,
+                pill1,
+                pill2,
+                pill3,
+                pill4,
+                pill5
+            ) = createRefs()
+
+            InputField(
+                inputHint = "Looking for a medicine?",
+                inputValue = searchItem,
+                onValueChange = { searchItem = it },
+                modifier = Modifier.constrainAs(searchField) {
+                    top.linkTo(parent.top, margin = 88.dp)
+                    start.linkTo(parent.start)
+                }
+            )
+
+            UIButton(
+                "Search",
+                modifier = Modifier
+                    .constrainAs(searchButton) {
+                        top.linkTo(searchField.bottom, margin = 16.dp)
+                        start.linkTo(c2start)
+                        end.linkTo(c3end)
+                        width = Dimension.fillToConstraints
+                    },
+                onClickAction = {
+                    Toast.makeText(context, "$searchItem logged in!", Toast.LENGTH_SHORT).show()
+                }
+            )
+
+            Text(
+                "Categories",
+                modifier = Modifier.constrainAs(categoryText){
+                    top.linkTo(searchButton.bottom, margin = 32.dp)
+                    start.linkTo(c1start)
+                }
+            )
+
+            Text(
+                "See all",
+                modifier = Modifier.constrainAs(seeAllText){
+                    top.linkTo(searchButton.bottom, margin = 32.dp)
+                    start.linkTo(c4start)
+                    end.linkTo(c4end)
+                }
+            )
+
+            ButtonBox(
+                text = "Antibiotic",
+                onClickAction = { },
+                inheritedModifier = Modifier.constrainAs(category1) {
+                    top.linkTo(categoryText.bottom, margin = 16.dp)
+                    start.linkTo(c1start)
+                    end.linkTo(c1end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
+
+            ButtonBox(
+                text = "Antipyretic",
+                onClickAction = { },
+                inheritedModifier = Modifier.constrainAs(category2) {
+                    top.linkTo(categoryText.bottom, margin = 16.dp)
+                    start.linkTo(c2start)
+                    end.linkTo(c2end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
+
+            ButtonBox(
+                text = "Antacids",
+                onClickAction = { },
+                inheritedModifier = Modifier.constrainAs(category3) {
+                    top.linkTo(categoryText.bottom, margin = 16.dp)
+                    start.linkTo(c3start)
+                    end.linkTo(c3end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
+
+            ButtonBox(
+                text = "Diuretics",
+                onClickAction = { },
+                inheritedModifier = Modifier.constrainAs(category4) {
+                    top.linkTo(categoryText.bottom, margin = 16.dp)
+                    start.linkTo(c4start)
+                    end.linkTo(c4end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
+
+            Text(
+                "Recent Updates",
+                modifier = Modifier.constrainAs(updatesText){
+                    top.linkTo(categoryText.bottom, margin = 112.dp)
+                    start.linkTo(c1start)
+                }
+            )
+
+            InfoPills(
+                infoColor = CustomRed,
+                inheritedModifier = Modifier.constrainAs(pill1){
+                    top.linkTo(updatesText.bottom, margin = 16.dp)
+                    start.linkTo(c1start)},
+                content = {
+                    NotificationPillText(
+                        title = "Biogesic running low!",
+                        subtitle = "50 stocks remaining",
+                        details = "April 16, 2025"
+                    )
+                }
+            )
+
+            InfoPills(
+                infoColor = CustomRed,
+                inheritedModifier = Modifier.constrainAs(pill2){
+                    top.linkTo(pill1.bottom, margin = 16.dp)
+                    start.linkTo(c1start)},
+                content = {
+                    NotificationPillText(
+                        title = "Bioflu running low!",
+                        subtitle = "20 stocks remaining",
+                        details = "April 20, 2025"
+                    )
+                }
+            )
+
+            InfoPills(
+                inheritedModifier = Modifier.constrainAs(pill3){
+                    top.linkTo(pill2.bottom, margin = 16.dp)
+                    start.linkTo(c1start)},
+                content = {
+                    NotificationPillText(
+                        title = "Alaxan restocked!",
+                        subtitle = "Added 100 stocks",
+                        details = "April 20, 2025"
+                    )
+                }
+            )
+        }
+    }
+}
+
+Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight(Alignment.Top)
+                .zIndex(1f),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            TopNavigation()
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 12.dp, start = 12.dp, end = 12.dp)
+                .wrapContentHeight(Alignment.Bottom)
+                .zIndex(1f),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            // NavigationBar()
+        }
+
+        ScreenContainer(
+            400.dp,
+            content = { HomepageScreen() }
+        )
+
+*/
+
+/*
+@Composable
+fun LogIn(){
+    SetScreen(400.dp) { c1start, c1end, c2start, c2end, c3start, c3end, c4start, c4end ->
+        val context = LocalContext.current
+
+        var username by rememberSaveable { mutableStateOf("") }
+        var password by rememberSaveable { mutableStateOf("") }
+
+        val (
+            usernameField,
+            passwordField,
+            loginButton,
+            signUpButton,
+            logo,
+            bannerText
+        ) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .width(300.dp)
+                .height(100.dp)
+                .constrainAs(logo) {
+                    top.linkTo(parent.top, margin = 160.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end) },
+            color = CustomGray
+        ) { }
+
+        Text(
+            "Welcome to Medicina",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.constrainAs(bannerText) {
+                top.linkTo(logo.bottom, margin = 16.dp)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        )
+
+        InputField(
+            inputName = "Username",
+            inputHint = "Enter your username",
+            inputValue = username,
+            onValueChange = { username = it },
+            modifier = Modifier
+                .constrainAs(usernameField) {
+                    top.linkTo(parent.top, margin = 360.dp)
+                    start.linkTo(parent.start)
+                }
+        )
+
+        InputField(
+            inputName = "Password",
+            inputHint = "Enter your password",
+            inputValue = password,
+            onValueChange = { password = it },
+            modifier = Modifier.constrainAs(passwordField) {
+                top.linkTo(usernameField.bottom, margin = 16.dp)
+                start.linkTo(c1start)
+            }
+        )
+
+        UIButton(
+            "Log in",
+            modifier = Modifier
+                .constrainAs(loginButton) {
+                    top.linkTo(passwordField.bottom, margin = 24.dp)
+                    start.linkTo(c2start)
+                    end.linkTo(c3end)
+                    width = Dimension.fillToConstraints },
+            onClickAction = {
+                val intent = Intent(context, Homepage::class.java)
+                context.startActivity(intent)
+            }
+        )
+
+        UIButton(
+            "Sign up",
+            modifier = Modifier
+                .constrainAs(signUpButton) {
+                    top.linkTo(loginButton.bottom, margin = 24.dp)
+                    start.linkTo(c2start)
+                    end.linkTo(c3end)
+                    width = Dimension.fillToConstraints },
+            isCTA = false,
+            onClickAction = {
+                val intent = Intent(context, SignUpActivity::class.java)
+                context.startActivity(intent)
+            }
+        )
+    }
+}
+
+
+@Composable
+fun trial1LoginScreen(){
+    SetScreen(400.dp) { c1start, c1end, c2start, c2end, c3start, c3end, c4start, c4end ->
+        val context = LocalContext.current
+
+        var username by rememberSaveable { mutableStateOf("") }
+        var password by rememberSaveable { mutableStateOf("") }
+
+        val (
+            usernameField,
+            passwordField,
+            loginButton,
+            signUpButton,
+            logo,
+            bannerText,
+            space
+        ) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .width(300.dp)
+                .height(100.dp)
+                .constrainAs(logo){
+                    top.linkTo(parent.top, margin = 160.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                },
+            color = CustomGray
+        ) { }
+
+        val configuration = LocalConfiguration.current
+        val screenHeight = configuration.screenHeightDp.dp
+
+
+        Text(
+            "Height: $screenHeight",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.constrainAs(bannerText){
+                top.linkTo(parent.top, margin = 200.dp)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            }
+        )
+
+        InputField(
+            inputName = "Username",
+            inputHint = "Enter your username",
+            inputValue = username,
+            onValueChange = { username = it },
+            modifier = Modifier
+                .constrainAs(usernameField) {
+                    top.linkTo(parent.top, margin = 360.dp)
+                    start.linkTo(parent.start)}
+        )
+
+        InputField(
+            inputName = "Password",
+            inputHint = "Enter your password",
+            inputValue = password,
+            onValueChange = { password = it },
+            modifier = Modifier.constrainAs(passwordField) {
+                top.linkTo(usernameField.bottom, margin = 100.dp)
+                start.linkTo(c1start)
+            }
+        )
+
+        UIButton(
+            "Log in",
+            modifier = Modifier
+                .constrainAs(loginButton) {
+                    top.linkTo(passwordField.bottom, margin = 24.dp)
+                    start.linkTo(c2start)
+                    end.linkTo(c3end)
+                    width = Dimension.fillToConstraints
+                },
+            onClickAction = {
+                val intent = Intent(context, Homepage::class.java)
+                context.startActivity(intent)
+            }
+        )
+
+        Spacer(modifier = Modifier
+            .height(500.dp)
+            .width(200.dp)
+            .background(CustomGray)
+            .constrainAs(space){
+                top.linkTo(loginButton.bottom, margin = 24.dp)
+            })
+
+        UIButton(
+            "Sign up",
+            modifier = Modifier
+                .constrainAs(signUpButton) {
+                    top.linkTo(loginButton.bottom, margin = 24.dp)
+                    start.linkTo(c2start)
+                    end.linkTo(c3end)
+                    width = Dimension.fillToConstraints
+                },
+            isCTA = false,
+            onClickAction = {
+                val intent = Intent(context, SignUpActivity::class.java)
+                context.startActivity(intent)
+            }
+        )
+    }
+}
+*/
+
+@Composable
+fun SignUpScreen(){
+    ConstraintLayout(modifier = Modifier.fillMaxWidth())
+    {
+
+
+        Text(
+            text = "Create New Account",
+            style = Typography.titleLarge,
+            modifier = Modifier.constrainAs(bannerText) {
+                bottom.linkTo(firstNameField.top, margin = 16.dp)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+            },
+            color = CustomBlack
+        )
+
+        InputField(
+            inputName = "First name",
+            inputHint = "Enter your first name",
+            inputValue = firstname,
+            onValueChange = { firstname = it },
+            modifier = Modifier.constrainAs(firstNameField) {
+                top.linkTo(parent.top, margin = 200.dp)
+                start.linkTo(parent.start)
+            }
+        )
+
+
+
+        InputField(
+            inputName = "Last name",
+            inputHint = "Enter your last name",
+            inputValue = lastname,
+            onValueChange = { lastname = it },
+            modifier = Modifier.constrainAs(lastNameField) {
+                top.linkTo(firstNameField.bottom, margin = 16.dp)
+            }
+        )
+
+        InputField(
+            inputName = "Middle Name",
+            inputHint = "Enter your middle name",
+            inputValue = middlename,
+            onValueChange = { middlename = it },
+            modifier = Modifier.constrainAs(middleNameField) {
+                top.linkTo(lastNameField.bottom, margin = 16.dp)
+            }
+        )
+
+        UIButton(
+            "Proceed",
+            modifier = Modifier
+                .constrainAs(signUpButton) {
+                    top.linkTo(middleNameField.bottom, margin = 24.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                }
+                .width(200.dp),
+            onClickAction = {
+                val intent = Intent(context, SignUpCredentials::class.java)
+                intent.putExtra("firstname", "$firstname")
+                context.startActivity(intent)
+            }
+        )
+    }
+}
+
+@Composable
+fun ContInventoryPage(
+    navController: NavController,
+//    viewModel: MedicineViewModel = viewModel()
+){
+//    val inventory by viewModel.medicine.collectAsState()
+//
+//    LaunchedEffect(Unit) {
+//        viewModel.getInventory()
+//    }
+
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier
+        .verticalScroll(scrollState)
+        .fillMaxSize()
+    ) {
+        ConstraintLayout(modifier = Modifier
+            .fillMaxSize()
+        ) {
+            val guidelines = setupColumnGuidelines()
+
+            val ( createButton, col ) = createRefs()
+
+            CreateButton(
+                "Add New Medicine",
+                inheritedModifier = Modifier.constrainAs(createButton){
+                    top.linkTo(parent.top, margin = 16.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                },
+                onclick = {
+                    val intent = Intent(context, NewMedicineActivity::class.java)
+                    context.startActivity(intent)
+                }
+            )
+
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .constrainAs(col){
+                        top.linkTo(createButton.bottom, margin = 16.dp)
+                        start.linkTo(guidelines.c1start)
+                    }
+            ) {
+                InfoPills(
+                    infoColor = CustomRed,
+                    inheritedModifier = Modifier,
+                    content = {
+                        InventoryPillText(
+                            brandName = medicine.brandName,
+                            genericName = medicine.genericName,
+                            quantity = medicine.quantity,
+                            price = medicine.price
+                        )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.Medicine.createRoute(medicine.id))
+                    }
+                )
+
+                items(inventory) { medicine ->
+                    InfoPills(
+                        infoColor = CustomRed,
+                        inheritedModifier = Modifier,
+                        content = {
+                            InventoryPillText(
+                                brandName = medicine.brandName,
+                                genericName = medicine.genericName,
+                                quantity = medicine.quantity,
+                                price = medicine.price
+                            )
+                        },
+                        onClickAction = {
+                            navController.navigate(Screen.Medicine.createRoute(medicine.id))
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+//    var brandName by remember { mutableStateOf(medicine?.brandName ?: "") }
+//    var genericName by remember { mutableStateOf(medicine?.genericName ?: "") }
+//    var category by remember { mutableStateOf(medicine?.category ?: "") }
+//    var regulation by remember { mutableStateOf(medicine?.regulation ?: "") }
+//    var price by remember { mutableStateOf(medicine?.price ?: "") }
+//    var description by remember { mutableStateOf(medicine?.description ?: "") }
+//
+//    LaunchedEffect(medicine) {
+//        medicine?.let{
+//            brandName = it.brandName
+//            genericName = it.genericName
+//            category = it.category
+//            regulation = it.regulation
+//            price = it.price
+//            description = it.description
+//        }
+//    }
+
+
+//            composable(
+//                route = Screen.Medicine.route,
+//                arguments = listOf(navArgument("medicineID"){
+//                    type = NavType.IntType
+//                })
+//            ) { backStackEntry ->
+//                val medicineID = backStackEntry.arguments?.getInt("medicineID") ?: -1
+//
+//                ScreenContainer(400.dp, content = {
+//                    ReadMedicineScreen()
+//                })
+//            }
+
+//@Composable
+//fun ManageMedicineScreen(
+//    medicineId: Int,
+//    viewModel: MedicineViewModel = viewModel()
+//) {
+//    val scrollState = rememberScrollState()
+//
+//    val medicine by viewModel.medicine.collectAsState()
+//
+//    LaunchedEffect(medicineId) {
+//        viewModel.getMedicine(medicineId)
+//    }
+//
+//    var brandName by remember { mutableStateOf("") }
+//    var genericName by remember { mutableStateOf("") }
+//    var category by remember { mutableStateOf("") }
+//    var regulation by remember { mutableStateOf("") }
+//    var price by remember { mutableStateOf("") }
+//    var description by remember { mutableStateOf("") }
+//
+//    Column(modifier = Modifier
+//        .verticalScroll(scrollState)
+//        .fillMaxSize()
+//    ) {
+//        ConstraintLayout(modifier = Modifier
+//            .fillMaxSize()
+//        ) {
+//            val guidelines = setupColumnGuidelines()
+//
+//            val regulationItems = listOf("OTC", "Prescription")
+//            val categories = listOf("Analgesic", "Antibiotic", "Antipyretic")
+//
+//            val (
+//                header,
+//                brandNameField,
+//                genericNameField,
+//                categoryField,
+//                regulationField,
+//                priceField,
+//                descriptionField
+//            ) = createRefs()
+//
+//            Text(
+//                text = if(medicineId == 0) "Add New Medicine" else "Edit Medicine: $medicineId",
+//                modifier = Modifier.constrainAs(header){
+//                    top.linkTo(parent.top, margin = 88.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                })
+//
+//            InputField(
+//                inputName = "Brand Name",
+//                inputHint = "Enter brand name",
+//                inputValue = brandName,
+//                onValueChange = { brandName = it },
+//                modifier = Modifier.constrainAs(brandNameField) {
+//                    top.linkTo(header.bottom, margin = 16.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                }
+//            )
+//
+//            InputField(
+//                inputName = "Generic Name",
+//                inputHint = "Enter generic name",
+//                inputValue = genericName,
+//                onValueChange = { genericName = it },
+//                modifier = Modifier.constrainAs(genericNameField) {
+//                    top.linkTo(brandNameField.bottom, margin = 8.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                }
+//            )
+//
+//            InputField(
+//                inputName = "Price",
+//                inputHint = "Enter price",
+//                inputValue = price.toString(),
+//                onValueChange = { price = it },
+//                modifier = Modifier.constrainAs(priceField) {
+//                    top.linkTo(genericNameField.bottom, margin = 8.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                }
+//            )
+//
+//
+//            DropdownInputField(
+//                inputName = "Regulation",
+//                inputHint = "Select Regulation",
+//                selectedValue = regulation,
+//                onValueChange = { regulation = it },
+//                dropdownOptions = regulationItems,
+//                modifier = Modifier.constrainAs(regulationField){
+//                    top.linkTo(priceField.bottom, margin = 8.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                    width = Dimension.fillToConstraints
+//                },
+//                width = Dimension.fillToConstraints
+//            )
+//
+//            DropdownInputField(
+//                inputName = "Category",
+//                inputHint = "Select category",
+//                selectedValue = category,
+//                onValueChange = { category = it },
+//                dropdownOptions = categories,
+//                modifier = Modifier.constrainAs(categoryField){
+//                    top.linkTo(regulationField.bottom, margin = 8.dp)
+//                    start.linkTo(guidelines.c1start)
+//                    end.linkTo(guidelines.c4end)
+//                    width = Dimension.fillToConstraints
+//                },
+//                width = Dimension.fillToConstraints
+//            )
+//
+//            InputField(
+//                inputName = "Description",
+//                inputHint = "Enter description",
+//                inputValue = description,
+//                onValueChange = { description = it },
+//                isMultiline = true,
+//                contentAlignment = Alignment.TopStart,
+//                verticalArrangement = Alignment.Top,
+//                textPadding = PaddingValues(6.dp),
+//                modifier = Modifier
+//                    .height(180.dp)
+//                    .constrainAs(descriptionField) {
+//                        top.linkTo(categoryField.bottom, margin = 8.dp)
+//                        start.linkTo(guidelines.c1start)
+//                        end.linkTo(guidelines.c4end)
+//                    }
+//            )
+//
+//        }
+//    }
+//}
+
+
+
+/* must be in order activity
+InputField(
+                inputName = "Quantity",
+                inputHint = "Enter quantity",
+                inputValue = quantity,
+                onValueChange = { quantity = it },
+                modifier = Modifier.constrainAs(quantityField) {
+                    top.linkTo(categoryField.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c1start)
+                    end.linkTo(guidelines.c2end)
+                    width = Dimension.fillToConstraints
+                },
+                width = Dimension.fillToConstraints
+            )
+
+            InputField(
+                inputName = "Expiration Date",
+                inputHint = "Enter expiration",
+                inputValue = expirationDate,
+                onValueChange = { expirationDate = it },
+                modifier = Modifier.constrainAs(expirationField) {
+                    top.linkTo(regulationField.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c3start)
+                    end.linkTo(guidelines.c4end)
+                    width = Dimension.fillToConstraints
+                },
+                width = Dimension.fillToConstraints
+
+
+//    var brandName by remember { mutableStateOf(medicine?.brandName ?: "") }
+//    var genericName by remember { mutableStateOf(medicine?.genericName ?: "") }
+//    var category by remember { mutableStateOf(medicine?.category ?: "") }
+//    var regulation by remember { mutableStateOf(medicine?.regulation ?: "") }
+//    var price by remember { mutableStateOf(medicine?.price ?: "") }
+//    var description by remember { mutableStateOf(medicine?.description ?: "") }
+
+//    LaunchedEffect(medicine) {
+//        medicine?.let{
+//            brandName = it.brandName
+//            genericName = it.genericName
+//            category = it.category
+//            regulation = it.regulation
+//            price = it.price
+//            description = it.description
+//        }
+//    }
+
+ */
+
+ WindowCompat.setDecorFitsSystemWindows(window, true)
+
+ /*
+ InfoPills(
+ infoColor = CustomRed,
+ inheritedModifier = Modifier.constrainAs(pill1){
+     top.linkTo(updatesText.bottom, margin = 16.dp)
+     start.linkTo(guidelines.c1start)},
+ content = {
+     NotificationPillText(
+         title = "Biogesic running low!",
+         subtitle = "50 stocks remaining",
+         details = "April 16, 2025"
+     )
+ }
+ )
+
+ InfoPills(
+ infoColor = CustomRed,
+ inheritedModifier = Modifier.constrainAs(pill2){
+     top.linkTo(pill1.bottom, margin = 8.dp)
+     start.linkTo(guidelines.c1start)},
+ content = {
+     NotificationPillText(
+         title = "Bioflu running low!",
+         subtitle = "20 stocks remaining",
+         details = "April 20, 2025"
+     )
+ }
+ )
+
+
+ InfoPills(
+                 infoColor = CustomRed,
+                 inheritedModifier = Modifier.constrainAs(pill1){
+                     top.linkTo(parent.top, margin = 16.dp)
+                     start.linkTo(guidelines.c1start)},
+                 content = {
+                     NotificationPillText(
+                         title = "Biogesic running low!",
+                         subtitle = "50 stocks remaining",
+                         details = "April 16, 2025"
+                     )
+                 }
+             )
+
+             InfoPills(
+                 infoColor = CustomRed,
+                 inheritedModifier = Modifier.constrainAs(pill2){
+                     top.linkTo(pill1.bottom, margin = 8.dp)
+                     start.linkTo(guidelines.c1start)},
+                 content = {
+                     NotificationPillText(
+                         title = "Bioflu running low!",
+                         subtitle = "20 stocks remaining",
+                         details = "April 20, 2025"
+                     )
+                 }
+             )
+
+             InfoPills(
+                 inheritedModifier = Modifier.constrainAs(pill3){
+                     top.linkTo(pill2.bottom, margin = 8.dp)
+                     start.linkTo(guidelines.c1start)},
+                 content = {
+                     NotificationPillText(
+                         title = "Alaxan restocked!",
+                         subtitle = "Added 100 stocks",
+                         details = "April 20, 2025"
+                     )
+                 }
+             )
+
+             InfoPills(
+                 inheritedModifier = Modifier.constrainAs(pill4){
+                     top.linkTo(pill3.bottom, margin = 8.dp)
+                     start.linkTo(guidelines.c1start)},
+                 content = {
+                     NotificationPillText(
+                         title = "Alaxan restocked!",
+                         subtitle = "Added 100 stocks",
+                         details = "April 20, 2025"
+                     )
+                 }
+             )
+
+             InfoPills(
+                 inheritedModifier = Modifier.constrainAs(pill5){
+                     top.linkTo(pill4.bottom, margin = 8.dp)
+                     start.linkTo(guidelines.c1start)},
+                 content = {
+                     NotificationPillText(
+                         title = "Alaxan restocked!",
+                         subtitle = "Added 100 stocks",
+                         details = "April 20, 2025"
+                     )
+                 }
+             )
+ */
+
+
+ @Composable
+ fun HomepageScreen(navController: NavController){
+     val scrollState = rememberScrollState()
+
+     Column(modifier = Modifier
+         .fillMaxSize()
+         .verticalScroll(scrollState)
+     ) {
+         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+             val (searchBackground) = createRefs()
+
+             Surface(
+                 color = CustomGreen,
+                 modifier = Modifier
+                     .fillMaxWidth()
+                     .height(124.dp)
+                     .constrainAs(searchBackground) {
+                         top.linkTo(parent.top)
+                         start.linkTo(parent.start)
+                     }
+             ){}
+
+             ScreenContainer(400.dp, content = {
+                 ConstraintLayout(
+                     modifier = Modifier
+                         .fillMaxSize()
+                 ) {
+                     val guidelines = setupColumnGuidelines()
+                     val context = LocalContext.current
+                     var searchItem by remember { mutableStateOf("") }
+
+                     val(
+                         searchField,
+                         searchButton,
+                         categoryText,
+                         seeAllText,
+                         category1,
+                         category2,
+                         category3,
+                         category4,
+                         updatesText
+                     ) = createRefs()
+
+                     InputField(
+                         inputHint = "Looking for a medicine?",
+                         inputValue = searchItem,
+                         onValueChange = { searchItem = it },
+                         modifier = Modifier.constrainAs(searchField) {
+                             top.linkTo(parent.top, margin = -16.dp)
+                             start.linkTo(parent.start)
+                         }
+                     )
+
+                     UIButton(
+                         "Search",
+                         modifier = Modifier
+                             .constrainAs(searchButton) {
+                                 top.linkTo(searchField.bottom, margin = 8.dp)
+                                 start.linkTo(guidelines.c2start)
+                                 end.linkTo(guidelines.c3end)
+                                 width = Dimension.fillToConstraints
+                             },
+                         onClickAction = {
+                             Toast.makeText(context, "$searchItem logged in!", Toast.LENGTH_SHORT).show()
+                         },
+                         isCTA = false
+                     )
+
+                     Text(
+                         "Categories",
+                         modifier = Modifier.constrainAs(categoryText){
+                             top.linkTo(searchButton.bottom, margin = 40.dp)
+                             start.linkTo(guidelines.c1start)
+                         },
+                         fontSize = 24.sp,
+                         fontWeight = FontWeight.ExtraBold,
+                         color = CustomBlack
+                     )
+
+                     Text(
+                         "See all",
+                         textDecoration = TextDecoration.Underline,
+                         modifier = Modifier
+                             .constrainAs(seeAllText) {
+                                 top.linkTo(categoryText.top)
+                                 bottom.linkTo(categoryText.bottom)
+                                 end.linkTo(guidelines.c4end)
+                             }
+                             .clickable {
+                                 navController.navigate(Screen.ViewCategories.route)
+                             },
+                         color = CustomBlack
+                     )
+
+                     ButtonBox(
+                         text = "Antibiotic",
+                         onClickAction = {
+                             navController.navigate(Screen.ViewCategoryMedicine.route)
+                         },
+                         inheritedModifier = Modifier.constrainAs(category1) {
+                             top.linkTo(categoryText.bottom, margin = 16.dp)
+                             start.linkTo(guidelines.c1start)
+                             end.linkTo(guidelines.c1end)
+                             width = Dimension.fillToConstraints
+                             height = Dimension.ratio("1:1")
+                         }
+                     )
+
+                     ButtonBox(
+                         text = "Antipyretic",
+                         onClickAction = {
+                             navController.navigate(Screen.ViewCategoryMedicine.route)
+                         },
+                         inheritedModifier = Modifier.constrainAs(category2) {
+                             top.linkTo(categoryText.bottom, margin = 16.dp)
+                             start.linkTo(guidelines.c2start)
+                             end.linkTo(guidelines.c2end)
+                             width = Dimension.fillToConstraints
+                             height = Dimension.ratio("1:1")
+                         }
+                     )
+
+                     ButtonBox(
+                         text = "Antacids",
+                         onClickAction = {
+                             navController.navigate(Screen.ViewCategoryMedicine.route)
+                         },
+                         inheritedModifier = Modifier.constrainAs(category3) {
+                             top.linkTo(categoryText.bottom, margin = 16.dp)
+                             start.linkTo(guidelines.c3start)
+                             end.linkTo(guidelines.c3end)
+                             width = Dimension.fillToConstraints
+                             height = Dimension.ratio("1:1")
+                         }
+                     )
+
+                     ButtonBox(
+                         text = "Diuretics",
+                         onClickAction = {
+                             navController.navigate(Screen.ViewCategoryMedicine.route)
+                         },
+                         inheritedModifier = Modifier.constrainAs(category4) {
+                             top.linkTo(categoryText.bottom, margin = 16.dp)
+                             start.linkTo(guidelines.c4start)
+                             end.linkTo(guidelines.c4end)
+                             width = Dimension.fillToConstraints
+                             height = Dimension.ratio("1:1")
+                         }
+                     )
+
+                     Text(
+                         "Recent Updates",
+                         modifier = Modifier.constrainAs(updatesText){
+                             top.linkTo(categoryText.bottom, margin = 112.dp)
+                             start.linkTo(guidelines.c1start)
+                         },
+                         fontSize = 24.sp,
+                         fontWeight = FontWeight.ExtraBold,
+                         color = CustomBlack
+                     )
+                 }
+             })
+         }
+         Spacing(24.dp)
+     }
+ }
+
+ else if (currentRoute == Screen.UpsertMedicine.route){
+                 Surface(
+                     modifier = Modifier
+                         .wrapContentHeight(Alignment.Bottom)
+                         .zIndex(1f),
+                     color = CustomWhite
+                 ) {
+                     Box(
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                         contentAlignment = Alignment.Center
+                     ){
+                         // Confirm(action = "Confirm Medicine")
+                     }
+                 }
+             } else if (currentRoute == Screen.UpsertOrder.route){
+                 Surface(
+                     modifier = Modifier
+                         .wrapContentHeight(Alignment.Bottom)
+                         .zIndex(1f),
+                     color = CustomWhite
+                 ) {
+                     Box(
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                         contentAlignment = Alignment.Center
+                     ){
+                         // Confirm(action = "Confirm Order")
+                     }
+                 }
+             } else if (currentRoute == Screen.UpsertCategory.route){
+                 Surface(
+                     modifier = Modifier
+                         .wrapContentHeight(Alignment.Bottom)
+                         .zIndex(1f),
+                     color = CustomWhite
+                 ) {
+                     Box(
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                         contentAlignment = Alignment.Center
+                     ){
+                         // Confirm(action = "Confirm Category")
+                     }
+                 }
+             } else if (currentRoute == Screen.UpsertSupplier.route){
+                 Surface(
+                     modifier = Modifier
+                         .wrapContentHeight(Alignment.Bottom)
+                         .zIndex(1f),
+                     color = CustomWhite
+                 ) {
+                     Box(
+                         modifier = Modifier
+                             .fillMaxWidth()
+                             .padding(bottom = 12.dp, start = 12.dp, end = 12.dp),
+                         contentAlignment = Alignment.Center
+                     ){
+                         // Confirm(action = "Confirm Supplier")
+                     }
+                 }
+             }
+
+
+@Composable
+fun Inventory(navController: NavController){
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier
+        .verticalScroll(scrollState)
+        .fillMaxSize()
+    ) {
+        ConstraintLayout(modifier = Modifier
+            .fillMaxSize()
+        ) {
+            val guidelines = setupColumnGuidelines()
+
+            val ( createButton, pill1, pill2) = createRefs()
+
+            CreateButton(
+                "Add New Medicine",
+                inheritedModifier = Modifier.constrainAs(createButton){
+                    top.linkTo(parent.top, margin = 16.dp)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                },
+                onclick = {
+                    navController.navigate(Screen.UpsertMedicine.createRoute(0))
+                }
+            )
+
+            InfoPills(
+                infoColor = CustomRed,
+                modifier = Modifier.constrainAs(pill1){
+                    top.linkTo(createButton.bottom, margin = 16.dp)
+                    start.linkTo(guidelines.c1start)
+                },
+                content = {
+                    InventoryPillText(
+                        brandName = "Brand 1",
+                        genericName = "Generic 1",
+                        quantity = 100,
+                        price = 100f
+                    )
+                },
+                onClickAction = {
+                    navController.navigate(Screen.ViewMedicine.createRoute(0)){
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+
+            InfoPills(
+                infoColor = CustomRed,
+                modifier = Modifier.constrainAs(pill2){
+                    top.linkTo(pill1.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c1start)
+                },
+                content = {
+                    InventoryPillText(
+                        brandName = "Brand 2",
+                        genericName = "Generic 2",
+                        quantity = 200,
+                        price = 200f
+                    )
+                },
+                onClickAction = {
+                    navController.navigate(Screen.ViewMedicine.createRoute(0))
+                }
+            )
+        }
+    }
+}

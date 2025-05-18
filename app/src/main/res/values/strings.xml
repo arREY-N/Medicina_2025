@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Medicina</string>
+    <string name="title_activity_sign_up">SignUpActivity</string>
+    <string name="title_activity_uicomponents">UIComponents</string>
+    <string name="title_activity_sign_up_credentials">SignUpCredentials</string>
+    <string name="title_activity_sign_up_contact">SignUpContact</string>
+    <string name="title_activity_screen_manager">ScreenManager</string>
+    <string name="title_activity_homepage">Homepage</string>
+    <string name="title_activity_guidelines">Guidelines</string>
+    <string name="title_activity_search">SearchActivity</string>
+    <string name="title_activity_inventory">InventoryActivity</string>
+    <string name="title_activity_orders">OrdersActivity</string>
+    <string name="title_activity_new_medicine">NewMedicineActivity</string>
+    <string name="title_activity_read_medicine_activity">ReadMedicineActivity</string>
+    <string name="title_activity_new_order">NewOrderActivity</string>
+    <string name="title_activity_accounts">AccountsActivity</string>
+    <string name="title_activity_account">AccountActivity</string>
+    <string name="title_activity_new_supplier">NewSupplierActivity</string>
+    <string name="title_activity_menu">MenuActivity</string>
+</resources>
