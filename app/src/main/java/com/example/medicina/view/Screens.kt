@@ -85,6 +85,7 @@ import com.example.medicina.viewmodel.SearchViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicina.components.Confirm
 import com.example.medicina.components.CreateButton
+import com.example.medicina.components.ViewSupplier
 import com.example.medicina.viewmodel.CategoryViewModel
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
@@ -160,7 +161,8 @@ fun MainScreen(){
         "notifications",
         "medicineCategory",
         "medicine",
-        "notification"
+        "notification",
+        "supplier"
     )
 
     val actionBarRoutes = listOf(
@@ -224,6 +226,10 @@ fun MainScreen(){
                                     categoryViewModel.save()
                                     categoryViewModel.reset()
                                 }
+                                "upsertSupplier" -> {
+                                    supplierViewModel.save()
+                                    supplierViewModel.reset()
+                                }
                                 else -> {}
                             }
                             navController.popBackStack()
@@ -241,6 +247,10 @@ fun MainScreen(){
                                 "upsertCategory" -> {
                                     categoryViewModel.delete()
                                     categoryViewModel.reset()
+                                }
+                                "upsertSupplier" -> {
+                                    supplierViewModel.delete()
+                                    supplierViewModel.reset()
                                 }
                                 else -> {}
                             }
@@ -435,7 +445,7 @@ fun MainScreen(){
 
             // suppliers screen
             composable(Screen.Suppliers.route) {
-                ScreenContainer { ViewSuppliers(navController) }
+                ScreenContainer { ViewSuppliers(navController, supplierViewModel, orderViewModel) }
             }
             composable(
                 route = Screen.UpsertSupplier.route,
@@ -444,9 +454,20 @@ fun MainScreen(){
                     defaultValue = 0
                 })
             ) { backStackEntry ->
-                val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: 0
+                val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: -1
 
-                ScreenContainer{ UpsertSuppliersScreen(supplierID) }
+                ScreenContainer{ UpsertSuppliersScreen(supplierID, supplierViewModel) }
+            }
+            composable(
+                route = Screen.ViewSupplier.route,
+                arguments = listOf(navArgument("supplierID") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                })
+            ) { backStackEntry ->
+                val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: -1
+
+                ScreenContainer{ ViewSupplier(supplierID, navController, orderViewModel, inventoryViewModel, supplierViewModel) }
             }
         }
     }

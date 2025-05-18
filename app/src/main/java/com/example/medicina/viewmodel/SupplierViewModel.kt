@@ -34,15 +34,19 @@ class SupplierViewModel : ViewModel() {
     private val _upsertSupplier = MutableStateFlow(Supplier())
     val upsertSupplier: StateFlow<Supplier> = _upsertSupplier
 
-    fun saveMedicine() {
+    fun save() {
         repository.updateSupplier(upsertSupplier.value)
         _supplierData.value = upsertSupplier.value
-        resetUpsertSupplier()
+        reset()
     }
 
-    fun resetUpsertSupplier(){
+    fun reset(){
         _supplierData.value = Supplier()
         _upsertSupplier.value = Supplier()
+    }
+
+    fun delete(){
+        repository.deleteSupplier(upsertSupplier.value.id)
     }
 
     fun getSupplierById(supplierId: Int) {

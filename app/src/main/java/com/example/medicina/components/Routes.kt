@@ -22,8 +22,11 @@ sealed class Screen(val route: String) {
     object ViewNotification : Screen("notification?notificationID={notificationID}"){
         fun createRoute(notificationID: Int?) = "notification?notificationID=$notificationID"
     }
-    object ViewAccount : Screen("viewAccount?accountID={accountID}"){
-        fun createRoute(accountID: Int?) = "viewAccount?accountID=$accountID"
+    object ViewAccount : Screen("account?accountID={accountID}"){
+        fun createRoute(accountID: Int?) = "account?accountID=$accountID"
+    }
+    object ViewSupplier : Screen("supplier?supplierID={supplierID}"){
+        fun createRoute(supplierID: Int?) = "supplier?supplierID=$supplierID"
     }
 
 

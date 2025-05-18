@@ -1,10 +1,18 @@
 package com.example.medicina.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -16,153 +24,146 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.viewmodel.InventoryViewModel
+import com.example.medicina.viewmodel.MedicineViewModel
+import com.example.medicina.viewmodel.OrderViewModel
+import com.example.medicina.viewmodel.SupplierViewModel
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
-fun ViewSuppliers(navController: NavController){
-    val scrollState = rememberScrollState()
-    Column(
+fun ViewSuppliers(
+    navController: NavController,
+    supplierViewModel: SupplierViewModel,
+    orderViewModel: OrderViewModel
+) {
+    val suppliers by supplierViewModel.suppliers.collectAsState()
+
+    LazyColumn(
         modifier = Modifier
-            .verticalScroll(scrollState)
             .fillMaxSize()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
-        ConstraintLayout(modifier = Modifier.fillMaxSize()){
-            val guidelines = setupColumnGuidelines()
-
-            val (supplier1, supplier2, supplier3, createButton) = createRefs()
-
+        item{
             CreateButton(
                 "Add New Supplier",
-                inheritedModifier = Modifier.constrainAs(createButton){
-                    top.linkTo(parent.top, margin = 16.dp)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                },
+                inheritedModifier = Modifier.fillMaxWidth(),
                 onclick = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(0))
-                }
-            )
-
-            InfoPills(
-                infoColor = CustomRed,
-                modifier = Modifier.constrainAs(supplier1){
-                    top.linkTo(createButton.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                },
-                content = {
-                    NotificationPillText(
-                        title = "Supplier 1",
-                        subtitle = "Email Address",
-                        details = "Contact Number"
-                    )
-                },
-                onClickAction = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(1))
-                }
-            )
-
-            InfoPills(
-                infoColor = CustomRed,
-                modifier = Modifier.constrainAs(supplier2){
-                    top.linkTo(supplier1.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                },
-                content = {
-                    NotificationPillText(
-                        title = "Supplier 2",
-                        subtitle = "Email Address",
-                        details = "Contact Number"
-                    )
-                },
-                onClickAction = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(1))
-                }
-            )
-
-            InfoPills(
-                infoColor = CustomRed,
-                modifier = Modifier.constrainAs(supplier3){
-                    top.linkTo(supplier2.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                },
-                content = {
-                    NotificationPillText(
-                        title = "Supplier 3",
-                        subtitle = "Email Address",
-                        details = "Contact Number"
-                    )
-                },
-                onClickAction = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(1))
+                    navController.navigate(Screen.UpsertSupplier.createRoute(-1))
                 }
             )
         }
+        if(suppliers.isNotEmpty()){
+            items(suppliers) { supplier ->
+                InfoPills(
+                    infoColor = CustomRed,
+                    modifier = Modifier.fillMaxWidth(),
+                    content = {
+                        SupplierPillText(
+                            supplierName = supplier.name,
+                            orders = orderViewModel.getOrdersBySupplierId(supplier.id)
+                        )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.ViewSupplier.createRoute(supplier.id))
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ViewSupplier(
+    supplierID: Int,
+    navController: NavController,
+    orderViewModel: OrderViewModel,
+    inventoryViewModel: InventoryViewModel,
+    supplierViewModel: SupplierViewModel
+){
+    val orders by orderViewModel.supplierOrder.collectAsState()
+    val medicines by inventoryViewModel.medicineMap.collectAsState()
+    val supplier by supplierViewModel.supplierMap.collectAsState()
+
+    LaunchedEffect (supplierID) {
+        orderViewModel.getOrdersBySupplierId(supplierID)
     }
 
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+        item{
+            Text("Supplier Orders")
+        }
+        if(orders.isNotEmpty()){
+            items(orders) { order ->
+                val orderedItem = medicines[order.medicineId]?.copy()
+                val orderSupplier = supplier[order.supplierId]?.copy()
+                InfoPills(
+                    infoColor = CustomRed,
+                    modifier = Modifier.fillMaxWidth(),
+                    content = {
+                        OrderPillText(
+                            orderedItem = orderedItem?.brandName ?: "",
+                            supplier = orderSupplier?.name ?: "",
+                            date = order.orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                            quantity = order.quantity,
+                            price = String.format(Locale.US, "%.2f", order.price)
+                        )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable
 fun UpsertSuppliersScreen(
-    categoryID: Int = 1,
-    // viewModel: OrderViewModel = viewModel()
+    supplierID: Int? = -1,
+    supplierViewModel: SupplierViewModel
 ){
-    val scrollState = rememberScrollState()
+    val supplier by supplierViewModel.upsertSupplier.collectAsState()
 
-    Column(modifier = Modifier
-        .verticalScroll(scrollState)
-        .fillMaxSize()
-    ) {
-        ConstraintLayout(modifier = Modifier
+    LaunchedEffect(supplierID) {
+        if(supplierID == -1){
+            supplierViewModel.reset()
+        } else {
+            supplierID?.let{
+                supplierViewModel.getSupplierById(supplierID)
+            }
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier
             .fillMaxSize()
-        ) {
-            val guidelines = setupColumnGuidelines()
-
-            var supplierName by remember { mutableStateOf("") }
-            var email by remember { mutableStateOf("") }
-            var number by remember { mutableStateOf("") }
-
-            val (
-                supplierNameField,
-                emailField,
-                numberField
-            ) = createRefs()
-
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item{
             InputField(
                 inputName = "Supplier Name",
                 inputHint = "Enter supplier name",
-                inputValue = supplierName,
-                onValueChange = { supplierName = it },
-                modifier = Modifier.constrainAs(supplierNameField) {
-                    top.linkTo(parent.top, margin = 16.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                }
+                inputValue = supplier.name,
+                onValueChange = { newValue -> supplierViewModel.updateData { it.copy(name = newValue) } },
+                modifier = Modifier.fillMaxWidth()
             )
+        }
 
+        item{
             InputField(
                 inputName = "Email",
                 inputHint = "Enter email",
-                inputValue = email,
-                onValueChange = { email = it },
-                modifier = Modifier.constrainAs(emailField) {
-                    top.linkTo(supplierNameField.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                }
-            )
-
-            InputField(
-                inputName = "Contact Number",
-                inputHint = "Enter number",
-                inputValue = number,
-                onValueChange = { number = it },
-                modifier = Modifier.constrainAs(numberField) {
-                    top.linkTo(emailField.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                }
+                inputValue = supplier.email,
+                onValueChange = { newValue -> supplierViewModel.updateData { it.copy(email = newValue) } },
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

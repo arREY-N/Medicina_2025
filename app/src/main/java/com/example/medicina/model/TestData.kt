@@ -195,6 +195,24 @@ class TestData {
                 30f,
                 LocalDate.of(2025, 5, 9),
                 LocalDate.of(2025, 5, 9)
+            ),
+            Order(
+                3,
+                2,
+                1,
+                30,
+                30f,
+                LocalDate.of(2025, 5, 9),
+                LocalDate.of(2025, 5, 9)
+            ),
+            Order(
+                4,
+                3,
+                2,
+                30,
+                30f,
+                LocalDate.of(2025, 5, 9),
+                LocalDate.of(2025, 5, 9)
             )
         )
         val RegulationRepository = mutableListOf(

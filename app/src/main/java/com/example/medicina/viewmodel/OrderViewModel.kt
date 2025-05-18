@@ -7,6 +7,7 @@ import com.example.medicina.model.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -60,6 +61,15 @@ class OrderViewModel : ViewModel() {
 
     fun updateData(transform: (Order) -> Order) {
         _upsertOrder.value = transform(_upsertOrder.value)
+    }
+
+    private val _supplierOrder = MutableStateFlow<List<Order>>(emptyList())
+    val supplierOrder: StateFlow<List<Order>> = _supplierOrder
+
+    fun getOrdersBySupplierId(supplierId: Int): Int {
+        val orders = _orders.value.filter { it.supplierId == supplierId }
+        _supplierOrder.value = orders
+        return orders.size
     }
 }
 

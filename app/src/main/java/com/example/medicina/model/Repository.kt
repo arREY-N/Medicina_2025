@@ -94,6 +94,10 @@ class Repository {
         }
     }
 
+    fun deleteSupplier(supplierId: Int){
+        TestData.SupplierRepository.removeIf { it.id == supplierId }
+    }
+
     fun getOrderById(id: Int): Order? = TestData.OrderRepository.find { it.id == id }
     fun getAllOrders(): List<Order> = TestData.OrderRepository
 

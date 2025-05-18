@@ -208,6 +208,33 @@ fun CategoryPillText(
 }
 
 @Composable
+fun SupplierPillText(
+    supplierName: String = "Brand Name",
+    orders: Int = 0
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+    ) {
+        Column(modifier = Modifier.weight(1f)){
+            Text(
+                text = supplierName,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = CustomBlack
+            )
+            Text(
+                text = "Orders: $orders",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                color = CustomBlack
+            )
+        }
+    }
+}
+
+@Composable
 fun OrderPillText(
     orderedItem: String = "Ordered Item",
     supplier: String = "Supplier Name",
