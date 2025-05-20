@@ -1,13 +1,16 @@
 package com.example.medicina.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,18 +40,23 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.R
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
+import com.example.medicina.model.Repository.generics
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomGreen
 import com.example.medicina.viewmodel.CategoryViewModel
+import com.example.medicina.viewmodel.GenericViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
 import com.example.medicina.viewmodel.RegulationViewModel
 import java.util.Locale
+import androidx.compose.foundation.lazy.items
+import com.example.medicina.viewmodel.BrandedGenericViewModel
 
 @Composable
 fun ReadMedicine(
     medicineId: Int,
     navController: NavController,
-    viewModel: MedicineViewModel
+    viewModel: MedicineViewModel,
+    brandedGenericViewModel: BrandedGenericViewModel
 ) {
     val scrollState = rememberScrollState()
 
@@ -56,8 +64,11 @@ fun ReadMedicine(
     val medicineCategory by viewModel.medicineCategory.collectAsState()
     val medicineRegulation by viewModel.medicineRegulation.collectAsState()
 
+    val genericNames by brandedGenericViewModel.currentGenerics.collectAsState()
+
     LaunchedEffect(medicineId) {
         viewModel.getMedicineById(medicineId)
+        brandedGenericViewModel.getGenericsId(medicineId)
     }
 
     LaunchedEffect(medicineData) {
@@ -88,7 +99,7 @@ fun ReadMedicine(
                     top.linkTo(parent.top, margin = 16.dp)
                 },
                 brandName = medicineData.brandName,
-                genericName = medicineData.genericName,
+                genericName = genericNames.toString(),
                 price = String.format(Locale.US, "%.2f", medicineData.price),
                 category = medicineCategory.categoryName,
                 regulation = medicineRegulation.regulation
@@ -182,20 +193,29 @@ fun UpsertMedicineScreen(
     medicineID: Int? = null,
     medicineViewModel: MedicineViewModel,
     regulationViewModel: RegulationViewModel,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel,
+    genericViewModel: GenericViewModel
 ) {
+    val genericMap by genericViewModel.genericMap.collectAsState()
+    val generics by genericViewModel.generics.collectAsState()
+    val genericNames = generics.map { it.genericName }
+    val genericList by genericViewModel.genericData.collectAsState()
+
     val categories by categoryViewModel.categories.collectAsState()
-    val categoryNames = categories.map { it.categoryName }
     val categoryMap by categoryViewModel.categoryMap.collectAsState()
+    val categoryNames = categories.map { it.categoryName }
 
     val regulations by regulationViewModel.regulations.collectAsState()
-    val regulationNames = regulations.map { it.regulation }
     val regulationMap by regulationViewModel.regulationMap.collectAsState()
+    val regulationNames = regulations.map { it.regulation }
 
     val upsertMedicine by medicineViewModel.upsertMedicine.collectAsState()
 
     var selectedCategory by remember { mutableStateOf("") }
     var selectedRegulation by remember { mutableStateOf("") }
+    var selectedItem by remember { mutableStateOf("") }
+
+
 
     LaunchedEffect(medicineID) {
         if(medicineID == -1){
@@ -229,13 +249,46 @@ fun UpsertMedicineScreen(
 
         item {
             Spacing(8.dp)
-            InputField(
-                inputName = "Generic Name",
-                inputHint = "Enter generic name",
-                inputValue = upsertMedicine.genericName,
-                onValueChange = { newValue -> medicineViewModel.updateData{ it.copy(genericName = newValue) }},
+            DropdownInputField(
+                inputName = "Add Generic Name",
+                inputHint = "Select Generic Name",
+                selectedValue = selectedItem,
+                onValueChange = { newSelection ->
+                    selectedItem = newSelection
+
+                    val selectedGeneric =
+                        genericMap.values.firstOrNull { it.genericName == newSelection }
+                    selectedGeneric?.let {
+                        genericViewModel.updateGeneric(selectedGeneric)
+                    }
+                },
+                dropdownOptions = genericNames,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            if (genericList.isNotEmpty()) {
+                Spacing(8.dp)
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(genericList) { generic ->
+                        UIButton(
+                            text = generic.genericName,
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .height(50.dp),
+                            onClickAction = {
+                                genericViewModel.removeGeneric(generic)
+                            },
+                            isCTA = false
+                        )
+                    }
+                }
+            } else {
+                Text("No generic names selected")
+            }
         }
 
         item {
