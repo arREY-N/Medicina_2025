@@ -92,7 +92,8 @@ fun UpsertOrderScreen(
                     }
                 },
                 dropdownOptions = medicineNames,
-                width = Dimension.fillToConstraints
+                width = Dimension.fillToConstraints,
+                addNew = true
             )
         }
 
