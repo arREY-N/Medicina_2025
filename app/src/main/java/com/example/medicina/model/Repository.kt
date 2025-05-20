@@ -1,42 +1,53 @@
 package com.example.medicina.model
 
+import android.widget.Toast
 import com.example.medicina.functions.MedicineFunctions
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filter
 
-class Repository {
-    fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.id == id }
-    fun getAllMedicines(): List<Medicine> = TestData.MedicineRepository
+object Repository {
+    private val _medicines = MutableStateFlow(TestData.MedicineRepository.toList())
+    val medicines: StateFlow<List<Medicine>> = _medicines
 
+    fun getAllMedicines(): StateFlow<List<Medicine>> = medicines
     fun getMedicinesByName(name: String) : List<Medicine> {
-        return MedicineFunctions.readMedicine(name)
+        return medicines.value.filter{
+            it.brandName.contains(name, ignoreCase = true)
+        }
     }
+
+    fun updateMedicine(updatedMedicine: Medicine): Int{
+        val index = TestData.MedicineRepository.indexOfFirst { it.id == updatedMedicine.id }
+
+        if(index == -1){
+            val id = TestData.MedicineRepository.size
+            val saveMedicine = updatedMedicine.copy(id = id)
+            TestData.MedicineRepository.add(saveMedicine)
+            _medicines.value = TestData.MedicineRepository.toList()
+            return id
+        }
+
+        TestData.MedicineRepository[index] = updatedMedicine
+        _medicines.value = TestData.MedicineRepository.toList()
+        return index
+    }
+
+    fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.id == id }
 
     fun deleteMedicine(medicineId: Int){
         TestData.MedicineRepository.removeIf { it.id == medicineId }
     }
 
-
     fun getMedicinesByCategory(categoryId: Int) : List<Medicine> {
         val medicines = getAllMedicines()
         val categoryMedicine: MutableList<Medicine> = mutableListOf()
-        medicines.forEach { medicine ->
+        medicines.value.forEach { medicine ->
             if(medicine.categoryId == categoryId){
                 categoryMedicine.add(medicine)
             }
         }
         return categoryMedicine
-        // return MedicineFunctions.searchMedicineByCategory(categoryId)
-    }
-
-    fun updateMedicine(updatedMedicine: Medicine){
-        val index = TestData.MedicineRepository.indexOfFirst { it.id == updatedMedicine.id }
-
-        if(index == -1){
-            val id = TestData.MedicineRepository.size + 1
-            val saveMedicine = updatedMedicine.copy(id = id)
-            TestData.MedicineRepository.add(saveMedicine)
-        } else {
-            TestData.MedicineRepository[index] = updatedMedicine
-        }
     }
 
     fun upsertCategory(updatedCategory: Category){

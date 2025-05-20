@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class RegulationViewModel: ViewModel() {
-    private val repository = Repository()
+    private val repository = Repository
 
     private val _regulations = MutableStateFlow<List<Regulation>>(emptyList())
     val regulations: StateFlow<List<Regulation>> = _regulations

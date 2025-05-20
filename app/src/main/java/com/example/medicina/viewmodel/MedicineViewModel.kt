@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MedicineViewModel : ViewModel() {
-    private val repository = Repository()
+    private val repository = Repository
 
     private val _medicineData = MutableStateFlow(Medicine())
     val medicineData: StateFlow<Medicine> = _medicineData
@@ -24,10 +24,11 @@ class MedicineViewModel : ViewModel() {
     private val _medicineRegulation = MutableStateFlow(Regulation())
     val medicineRegulation: StateFlow<Regulation> = _medicineRegulation
 
-    fun save() {
-        repository.updateMedicine(upsertMedicine.value)
+    fun save(): Int {
+        val id = repository.updateMedicine(upsertMedicine.value)
         _medicineData.value = upsertMedicine.value
         reset()
+        return id
     }
 
     fun delete() {

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class SupplierViewModel : ViewModel() {
-    private val repository = Repository()
+    private val repository = Repository
 
     private val _suppliers: MutableStateFlow<List<Supplier>> = MutableStateFlow(emptyList())
     val suppliers: StateFlow<List<Supplier>> = _suppliers

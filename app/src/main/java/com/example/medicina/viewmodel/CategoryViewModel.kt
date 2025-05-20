@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.*
 
 class CategoryViewModel: ViewModel() {
-    private val repository = Repository()
+    private val repository = Repository
 
     private val _categoryData = MutableStateFlow(Category())
     val categoryData: StateFlow<Category> = _categoryData

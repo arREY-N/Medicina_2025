@@ -7,7 +7,7 @@ import java.time.LocalDate
 
 class TestData {
     companion object {
-        val AccountRepository = mutableListOf(
+        val AccountRepository = mutableStateListOf(
             Account(
                 0,
                 "Super",
@@ -110,7 +110,7 @@ class TestData {
             )
         )
 
-        val NotificationRepository = mutableListOf(
+        val NotificationRepository = mutableStateListOf(
             Notification(
                 0,
                 "Banner",
@@ -145,7 +145,7 @@ class TestData {
             )
         )
 
-        val CategoryRepository = mutableListOf(
+        val CategoryRepository = mutableStateListOf(
             Category(
                 0,
                 categoryName = "Antibiotic",
@@ -168,7 +168,7 @@ class TestData {
             )
         )
 
-        val OrderRepository = mutableListOf(
+        val OrderRepository = mutableStateListOf(
             Order(
                 0,
                 1,
@@ -215,7 +215,7 @@ class TestData {
                 LocalDate.of(2025, 5, 9)
             )
         )
-        val RegulationRepository = mutableListOf(
+        val RegulationRepository = mutableStateListOf(
             Regulation(
                 0,
                 "OTC"
@@ -225,7 +225,7 @@ class TestData {
                 "Prescription"
             )
         )
-        val SupplierRepository = mutableListOf(
+        val SupplierRepository = mutableStateListOf(
             Supplier(
                 0,
                 "Supplier A"
@@ -239,7 +239,7 @@ class TestData {
                 "Supplier C"
             )
         )
-        val DesignationRepository = mutableListOf(
+        val DesignationRepository = mutableStateListOf(
             Designation(
                 0,
                 "Super Admin"

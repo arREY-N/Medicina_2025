@@ -215,7 +215,10 @@ fun MainScreen(){
                         confirmOnclick = {
                             when (baseRoute) {
                                 "upsertMedicine" -> {
-                                    medicineViewModel.save()
+                                    val id = medicineViewModel.save()
+                                    medicineViewModel.getMedicineById(id)
+                                    val savedMedicine = medicineViewModel.upsertMedicine
+                                    Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
                                     medicineViewModel.reset()
                                 }
                                 "upsertOrder" -> {
@@ -971,6 +974,7 @@ fun InventoryPage(
     viewModel: InventoryViewModel,
     categoryViewModel: CategoryViewModel
 ) {
+
     val medicines by viewModel.medicines.collectAsState()
 
     LazyColumn(

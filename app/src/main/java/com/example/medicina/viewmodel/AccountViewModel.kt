@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class AccountViewModel : ViewModel() {
-    private val repository = Repository()
+    private val repository = Repository
 
     private val _accounts = MutableStateFlow<List<Account>>(emptyList())
     val accounts: MutableStateFlow<List<Account>> = _accounts

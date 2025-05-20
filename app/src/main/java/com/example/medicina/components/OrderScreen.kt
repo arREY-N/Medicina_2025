@@ -1,5 +1,6 @@
 package com.example.medicina.components
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +15,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.Dimension
@@ -23,6 +26,8 @@ import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -34,6 +39,9 @@ fun UpsertOrderScreen(
     inventoryViewModel: InventoryViewModel,
     supplierViewModel: SupplierViewModel
 ){
+    Toast.makeText(LocalContext.current, "Order ID: $orderID", Toast.LENGTH_SHORT).show()
+    val context = LocalContext.current
+
     val medicineMap by inventoryViewModel.medicineMap.collectAsState()
     val medicines by inventoryViewModel.medicines.collectAsState()
     val medicineNames = medicines.map { it.brandName }
@@ -46,19 +54,33 @@ fun UpsertOrderScreen(
 
     var selectedMedicine by remember { mutableStateOf("") }
     var selectedSupplier by remember { mutableStateOf("") }
-
-    LaunchedEffect(orderID){
-        if(orderID == -1){
+//
+//    LaunchedEffect(orderID){
+//        if(orderID == -1){
+//
+//        }
+//
+//    }
+    LaunchedEffect(orderID) {
+        if (orderID == -1) {
             orderViewModel.reset()
+            selectedSupplier = ""
+            selectedMedicine = ""
         } else {
-            orderID?.let { orderViewModel.getOrderById(orderID) }
+            orderID?.let{
+                orderViewModel.getOrderById(orderID)
+            }
+
+            snapshotFlow { orderViewModel.upsertOrder.value }
+                .filter { it.id != -1 }
+                .firstOrNull()
+                ?.let { order ->
+                    selectedMedicine = medicineMap[order.medicineId]?.brandName ?: ""
+                    selectedSupplier = supplierMap[order.supplierId]?.name ?: ""
+                }
         }
     }
 
-    LaunchedEffect(upsertOrder) {
-        selectedMedicine = medicineMap.values.firstOrNull { it.id == upsertOrder.medicineId }?.brandName ?: ""
-        selectedSupplier = supplierMap.values.firstOrNull { it.id == upsertOrder.supplierId }?.name ?: ""
-    }
 
     LazyColumn(modifier = Modifier
         .fillMaxSize()
@@ -71,7 +93,7 @@ fun UpsertOrderScreen(
                 onValueChange = { newSelection ->
                     selectedMedicine = newSelection
 
-                    val selectedId = medicineMap.values.firstOrNull { it.brandName == newSelection }?.id
+                    val selectedId = medicineMap.values.firstOrNull { it.brandName == selectedMedicine }?.id
                     selectedId?.let {
                         orderViewModel.updateData { it.copy(medicineId = selectedId) }
                     }
@@ -89,10 +111,11 @@ fun UpsertOrderScreen(
                 onValueChange = { newSelection ->
                     selectedSupplier = newSelection
 
-                    val selectedId = supplierMap.values.firstOrNull { it.name == newSelection }?.id
+                    val selectedId = supplierMap.values.firstOrNull { it.name == selectedSupplier }?.id
                     selectedId?.let {
                         orderViewModel.updateData { it.copy(supplierId = selectedId) }
-                    } },
+                    }
+                },
                 dropdownOptions = supplierNames,
                 modifier = Modifier.fillMaxWidth()
             )
