@@ -2,7 +2,9 @@ package com.example.medicina.components
 
 sealed class Screen(val route: String) {
     object Home : Screen("home")
-    object Search : Screen("search")
+    object Search : Screen("search?searchItem={searchItem}"){
+        fun createRoute(searchItem: String) = "search?searchItem=$searchItem"
+    }
     object MainMenu : Screen("mainMenu")
 
     object Accounts : Screen("accounts")

@@ -11,12 +11,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -96,6 +98,15 @@ import com.example.medicina.viewmodel.SupplierViewModel
 import com.example.medicina.viewmodel.AccountViewModel
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalDensity
+import com.example.medicina.viewmodel.BrandedGenericViewModel
+import com.example.medicina.viewmodel.GenericViewModel
+
 
 @Composable
 fun ScreenContainer(
@@ -127,6 +138,7 @@ fun getBaseRoute(route: String?): String? {
 @Composable
 fun MainScreen(){
     val context = LocalContext.current
+
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -141,6 +153,8 @@ fun MainScreen(){
     val supplierViewModel: SupplierViewModel = viewModel()
     val notificationViewModel: NotificationViewModel = viewModel()
     val accountViewModel: AccountViewModel = viewModel()
+    val genericViewModel: GenericViewModel = viewModel()
+    val brandedGenericViewModel: BrandedGenericViewModel = viewModel()
 
     val (isHome, pageTitle) = when (currentRoute) {
         Screen.Home.route -> true to "Medicina"
@@ -198,7 +212,7 @@ fun MainScreen(){
                     modifier = Modifier
                         .height(100.dp)
                         .background(CustomWhite)
-                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp, top = 8.dp)
                 ) {
                     NavigationBar(navController)
                 }
@@ -284,7 +298,8 @@ fun MainScreen(){
                 }
 
             }
-        }
+        },
+        modifier = Modifier.imePadding()
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -319,24 +334,21 @@ fun MainScreen(){
         ) {
             // main screens
             composable(Screen.Home.route) { Home(navController, searchViewModel) }
-            composable(Screen.Search.route) { ScreenContainer { SearchPage(navController, searchViewModel) } }
             composable(
-                route = Screen.Inventory.route,
-                arguments = listOf(navArgument("categoryID"){
-                    type = NavType.IntType
-                    defaultValue = -1
-                    nullable = false
+                route = Screen.Search.route,
+                arguments = listOf(navArgument("searchItem") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
                 })
-            ) { backStackEntry ->
-                val categoryID = backStackEntry.arguments?.getInt("categoryID") ?: -1
+            ) { navBackStackEntry ->
+                val searchItem = navBackStackEntry.arguments?.getString("searchItem") ?: ""
 
-                ScreenContainer {
-                    InventoryPage(navController, inventoryViewModel, categoryViewModel)
-                }
+                ScreenContainer { SearchPage(navController, searchViewModel) }
             }
-            composable(Screen.Orders.route) {
-                ScreenContainer { OrdersPage(navController, orderViewModel, inventoryViewModel, supplierViewModel) }
-            }
+            composable(Screen.Inventory.route) { ScreenContainer { InventoryPage(navController, inventoryViewModel, categoryViewModel) } }
+            composable(Screen.Orders.route) { ScreenContainer { OrdersPage(navController, orderViewModel, inventoryViewModel, supplierViewModel) } }
+            composable(Screen.MainMenu.route) { ScreenContainer { MenuScreen(navController) } }
 
             // notifications screen
             composable(Screen.Notifications.route) {
@@ -354,9 +366,7 @@ fun MainScreen(){
 
                 ScreenContainer { Notification(notificationID, notificationViewModel) }
             }
-            composable(Screen.MainMenu.route) {
-                ScreenContainer { MenuScreen(navController) }
-            }
+
 
             // account screens
             composable(
@@ -393,7 +403,8 @@ fun MainScreen(){
                         medicineID,
                         medicineViewModel,
                         regulationViewModel,
-                        categoryViewModel
+                        categoryViewModel,
+                        genericViewModel
                     )
                 }
             }
@@ -406,7 +417,7 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val medicineID = backStackEntry.arguments?.getInt("medicineID") ?: 0
 
-                ScreenContainer { ReadMedicine(medicineID, navController, medicineViewModel) }
+                ScreenContainer { ReadMedicine(medicineID, navController, medicineViewModel, brandedGenericViewModel) }
             }
             composable(
                 route = Screen.UpsertOrder.route,
@@ -493,7 +504,7 @@ fun Home(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().imePadding()
     ) {
         item {
             Box(
@@ -521,7 +532,9 @@ fun Home(
                             "Search",
                             onClickAction = {
                                 Toast.makeText(context, "Searching for $searchItem", Toast.LENGTH_SHORT).show()
-                                navController.navigate(Screen.Search.route){
+                                searchViewModel.updateSearchItem(searchItem)
+                                searchViewModel.performSearch()
+                                navController.navigate(Screen.Search.createRoute(searchItem)){
                                     popUpTo(navController.graph.startDestinationId) {
                                         saveState = true
                                     }
@@ -703,7 +716,7 @@ fun SearchPage(
                     inputValue = searchItem,
                     onValueChange = { newValue -> searchViewModel.updateSearchItem(newValue) },
                     modifier = Modifier.constrainAs(searchField) {
-                        top.linkTo(parent.top)
+                        top.linkTo(parent.top, margin = -16.dp)
                         start.linkTo(parent.start)
                     }
                 )
@@ -719,6 +732,7 @@ fun SearchPage(
                         },
                     onClickAction = {
                         Toast.makeText(context, "Searching for $searchItem", Toast.LENGTH_SHORT).show()
+                        searchViewModel.performSearch()
                     },
                     isCTA = true
                 )
