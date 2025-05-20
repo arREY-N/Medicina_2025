@@ -46,7 +46,7 @@ class AccountViewModel : ViewModel() {
     }
 
     fun saveAccount() {
-        repository.updateAccount(_editAccount.value)
+        repository.upsertAccount(_editAccount.value)
         _account.value = editAccount.value
     }
 
@@ -56,7 +56,6 @@ class AccountViewModel : ViewModel() {
 
 
     init{
-        _accounts.value = repository.getAllAccounts()
         _designations.value = repository.getAllDesignation()
     }
 }

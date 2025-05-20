@@ -39,7 +39,6 @@ fun UpsertOrderScreen(
     inventoryViewModel: InventoryViewModel,
     supplierViewModel: SupplierViewModel
 ){
-    Toast.makeText(LocalContext.current, "Order ID: $orderID", Toast.LENGTH_SHORT).show()
     val context = LocalContext.current
 
     val medicineMap by inventoryViewModel.medicineMap.collectAsState()
@@ -54,13 +53,7 @@ fun UpsertOrderScreen(
 
     var selectedMedicine by remember { mutableStateOf("") }
     var selectedSupplier by remember { mutableStateOf("") }
-//
-//    LaunchedEffect(orderID){
-//        if(orderID == -1){
-//
-//        }
-//
-//    }
+
     LaunchedEffect(orderID) {
         if (orderID == -1) {
             orderViewModel.reset()

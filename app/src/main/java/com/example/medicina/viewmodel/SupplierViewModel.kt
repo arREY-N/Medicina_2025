@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 class SupplierViewModel : ViewModel() {
     private val repository = Repository
 
-    private val _suppliers: MutableStateFlow<List<Supplier>> = MutableStateFlow(emptyList())
+    private val _suppliers = repository.getAllSuppliers()
     val suppliers: StateFlow<List<Supplier>> = _suppliers
 
     val supplierMap: StateFlow<Map<Int, Supplier>> = _suppliers
@@ -24,10 +24,6 @@ class SupplierViewModel : ViewModel() {
             initialValue = emptyMap()
         )
 
-    init {
-        _suppliers.value = repository.getAllSuppliers()
-    }
-
     private val _supplierData = MutableStateFlow(Supplier())
     val supplierData: StateFlow<Supplier> = _supplierData
 
@@ -35,7 +31,7 @@ class SupplierViewModel : ViewModel() {
     val upsertSupplier: StateFlow<Supplier> = _upsertSupplier
 
     fun save() {
-        repository.updateSupplier(upsertSupplier.value)
+        repository.upsertSupplier(upsertSupplier.value)
         _supplierData.value = upsertSupplier.value
         reset()
     }

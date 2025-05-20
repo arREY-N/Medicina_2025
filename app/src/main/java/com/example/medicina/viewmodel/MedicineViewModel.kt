@@ -25,7 +25,7 @@ class MedicineViewModel : ViewModel() {
     val medicineRegulation: StateFlow<Regulation> = _medicineRegulation
 
     fun save(): Int {
-        val id = repository.updateMedicine(upsertMedicine.value)
+        val id = repository.upsertMedicine(upsertMedicine.value)
         _medicineData.value = upsertMedicine.value
         reset()
         return id

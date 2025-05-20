@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 class OrderViewModel : ViewModel() {
     private val repository = Repository
 
-    private val _orders = MutableStateFlow<List<Order>>(emptyList())
+    private val _orders = repository.getAllOrders()
     val orders: StateFlow<List<Order>> = _orders
 
     val orderMap: StateFlow<Map<Int, Order>> = _orders
@@ -26,11 +26,6 @@ class OrderViewModel : ViewModel() {
             started = SharingStarted.Eagerly,
             initialValue = emptyMap()
         )
-
-    init {
-        _orders.value = repository.getAllOrders()
-    }
-
 
     private val _orderData = MutableStateFlow(Order())
     val orderData: StateFlow<Order> = _orderData
@@ -49,7 +44,7 @@ class OrderViewModel : ViewModel() {
     }
 
     fun save() {
-        repository.updateOrder(upsertOrder.value)
+        repository.upsertOrder(upsertOrder.value)
         _orderData.value = upsertOrder.value
         reset()
     }

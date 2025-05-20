@@ -32,10 +32,6 @@ class CategoryViewModel: ViewModel() {
     private val _categoryMedicines = MutableStateFlow<List<Medicine>>(emptyList())
     val categoryMedicines: StateFlow<List<Medicine>> = _categoryMedicines
 
-    init {
-        _categories.value = repository.getAllCategories()
-    }
-
     fun reset(){
         _categoryData.value = Category()
         _upsertCategory.value = Category()
