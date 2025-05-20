@@ -162,6 +162,12 @@ object Repository {
         _orders.value = TestData.OrderRepository.toList()
     }
 
+    private val _generics = MutableStateFlow(TestData.GenericRepository.toList())
+    val generics: StateFlow<List<Generic>> = _generics
+    fun getAllGenerics(): StateFlow<List<Generic>> = generics
+
+    fun getGenericById(id: Int): Generic? = TestData.GenericRepository.find { it.id == id }
+
 
     fun getDesignationById(id: Int): Designation? = TestData.DesignationRepository.find { it.id == id }
     fun getAllDesignation(): List<Designation> = TestData.DesignationRepository
@@ -171,4 +177,10 @@ object Repository {
 
     fun getRegulationById(id: Int): Regulation? = TestData.RegulationRepository.find { it.id == id }
     fun getAllRegulations(): List<Regulation> = TestData.RegulationRepository
+
+    private val _brandedGenerics = MutableStateFlow(TestData.BrandedGenericRepository.toList())
+    val brandedGenerics: StateFlow<List<BrandedGeneric>> = _brandedGenerics
+    fun getAllBrandedGenerics(): StateFlow<List<BrandedGeneric>> = brandedGenerics
+
+
 }

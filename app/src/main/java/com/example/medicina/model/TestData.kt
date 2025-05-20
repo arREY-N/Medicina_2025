@@ -37,6 +37,24 @@ class TestData {
             )
         )
 
+        val GenericRepository = mutableStateListOf(
+            Generic(
+                0,
+                "Generic 1"
+            ),
+            Generic(
+                1,
+                "Generic 2"
+            ),
+            Generic(
+                2,
+                "Generic 3"
+            ),
+            Generic(
+                3,
+                "Generic 4"
+            )
+        )
         val MedicineRepository = mutableStateListOf(
             Medicine(
                 0,
@@ -251,6 +269,24 @@ class TestData {
             Designation(
                 2,
                 "Clerk"
+            )
+        )
+        val BrandedGenericRepository = mutableStateListOf(
+            BrandedGeneric(
+                0,
+                0
+            ),
+            BrandedGeneric(
+                1,
+                1
+            ),
+            BrandedGeneric(
+                1,
+                2
+            ),
+            BrandedGeneric(
+                2,
+                2
             )
         )
     }
