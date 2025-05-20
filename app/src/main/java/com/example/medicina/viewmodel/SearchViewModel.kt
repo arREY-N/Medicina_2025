@@ -3,13 +3,18 @@ package com.example.medicina.viewmodel
 import androidx.lifecycle.ViewModel
 import com.example.medicina.model.Medicine
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.model.Repository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class SearchViewModel: ViewModel() {
+    private val repository = Repository
+
+    private val medicines = repository.getAllMedicines()
 
     private val _searchItem = MutableStateFlow("")
     val searchItem: StateFlow<String> = _searchItem
@@ -30,6 +35,7 @@ class SearchViewModel: ViewModel() {
     }
 
     fun performSearch(){
-        // searchResults = results
+        _searchResults.value = emptyList()
+        _searchResults.value = repository.getMedicinesByName(searchItem.value)
     }
 }
