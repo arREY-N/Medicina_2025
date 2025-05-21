@@ -75,6 +75,7 @@ fun CategoriesScreen(
     categoryViewModel: CategoryViewModel
 ){
     val categories by categoryViewModel.categories.collectAsState()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()

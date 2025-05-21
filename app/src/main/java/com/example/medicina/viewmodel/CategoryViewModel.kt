@@ -12,22 +12,21 @@ import kotlinx.coroutines.flow.*
 class CategoryViewModel: ViewModel() {
     private val repository = Repository
 
-    private val _categoryData = MutableStateFlow(Category())
-    val categoryData: StateFlow<Category> = _categoryData
+    val categories = repository.getAllCategories()
 
-    private val _upsertCategory = MutableStateFlow(Category())
-    val upsertCategory: StateFlow<Category> = _upsertCategory
-
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: MutableStateFlow<List<Category>> = _categories
-
-    val categoryMap: StateFlow<Map<Int, Category>> = _categories
+    val categoryMap: StateFlow<Map<Int, Category>> = categories
         .map { list -> list.associateBy { it.id } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = emptyMap()
         )
+
+    private val _categoryData = MutableStateFlow(Category())
+    val categoryData: StateFlow<Category> = _categoryData
+
+    private val _upsertCategory = MutableStateFlow(Category())
+    val upsertCategory: StateFlow<Category> = _upsertCategory
 
     private val _categoryMedicines = MutableStateFlow<List<Medicine>>(emptyList())
     val categoryMedicines: StateFlow<List<Medicine>> = _categoryMedicines
