@@ -5,8 +5,12 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -31,6 +35,8 @@ import com.example.medicina.components.InputField
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.components.Spacing
 import com.example.medicina.components.UIButton
+import com.example.medicina.functions.AccountException
+import com.example.medicina.functions.AccountFunctions
 
 class SignUpActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,165 +53,129 @@ class SignUpActivity : ComponentActivity() {
 @Composable
 fun SignUpScreen(){
     val scrollState = rememberScrollState()
-
     val context = LocalContext.current
 
     var firstname by remember { mutableStateOf("") }
     var lastname by remember { mutableStateOf("") }
     var middlename by remember { mutableStateOf("") }
-    var designation by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
-    val designationList = listOf("Pharmacist", "Manager", "Owner" )
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(scrollState)
-    ) {
-        ConstraintLayout(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            val guidelines = setupColumnGuidelines()
-
-            val (
-                bannerText,
-                firstNameField,
-                lastNameField,
-                middleNameField,
-                designationField,
-                usernameField,
-                passwordField,
-                confirmPasswordField,
-                signUpButton
-            ) = createRefs()
-
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+        item{
+            Spacing(88.dp)
             Text(
                 "Welcome to Medicina!",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.constrainAs(bannerText) {
-                    top.linkTo(parent.top, margin = 88.dp)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                }
+                modifier = Modifier.fillMaxWidth()
             )
-
+        }
+        item{
             InputField(
                 inputName = "First name",
                 inputHint = "First name",
                 inputValue = firstname,
                 onValueChange = { firstname = it },
-                modifier = Modifier
-                    .constrainAs(firstNameField) {
-                        top.linkTo(bannerText.bottom, margin = 24.dp)
-                        start.linkTo(parent.start)
-                    }
+                modifier = Modifier.fillMaxWidth()
             )
-
+        }
+        item{
             InputField(
                 inputName = "Last name",
                 inputHint = "Last name",
                 inputValue = lastname,
                 onValueChange = { lastname = it },
-                modifier = Modifier.constrainAs(lastNameField) {
-                    top.linkTo(firstNameField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                }
+                modifier = Modifier.fillMaxWidth()
             )
-
+        }
+        item{
             InputField(
                 inputName = "Middle name",
                 inputHint = "Middle name",
                 inputValue = middlename,
                 onValueChange = { middlename = it },
-                modifier = Modifier.constrainAs(middleNameField) {
-                    top.linkTo(lastNameField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                }
-            )
-
-            DropdownInputField(
-                inputName = "Designation",
-                inputHint = "Designation",
-                selectedValue = designation,
-                onValueChange = { designation = it },
-                dropdownOptions = designationList,
-                modifier = Modifier.constrainAs(designationField){
-                    top.linkTo(middleNameField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                },
-                width = Dimension.fillToConstraints
-            )
-
+                modifier = Modifier.fillMaxWidth())
+        }
+        item{
             InputField(
                 inputName = "Username",
                 inputHint = "Username",
                 inputValue = username,
                 onValueChange = { username = it },
-                modifier = Modifier.constrainAs(usernameField) {
-                    top.linkTo(designationField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                }
+                modifier = Modifier.fillMaxWidth()
             )
-
+        }
+        item{
             InputField(
                 inputName = "Password",
                 inputHint = "Password",
                 inputValue = password,
                 visualTransformation = PasswordVisualTransformation(),
                 onValueChange = { password = it },
-                modifier = Modifier.constrainAs(passwordField) {
-                    top.linkTo(usernameField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                }
+                modifier = Modifier.fillMaxWidth()
             )
-
+        }
+        item{
             InputField(
                 inputName = "Confirm Password",
                 inputHint = "Confirm Password",
                 inputValue = confirmPassword,
                 visualTransformation = PasswordVisualTransformation(),
                 onValueChange = { confirmPassword = it },
-                modifier = Modifier.constrainAs(confirmPasswordField) {
-                    top.linkTo(passwordField.bottom, margin = 12.dp)
-                    start.linkTo(guidelines.c1start)
-                }
-            )
-
-            UIButton(
-                "Sign up",
-                modifier = Modifier
-                    .constrainAs(signUpButton) {
-                        top.linkTo(confirmPasswordField.bottom, margin = 24.dp)
-                        start.linkTo(guidelines.c2start)
-                        end.linkTo(guidelines.c3end)
-                        width = Dimension.fillToConstraints },
-                onClickAction = {
-                    if(firstname.isEmpty() || lastname.isEmpty()
-                        || username.isEmpty() || password.isEmpty()
-                        || confirmPassword.isEmpty()){
-                        Toast.makeText(context, "Please fill up all the fields", Toast.LENGTH_SHORT).show()
-                    } else {
-                        if(password != confirmPassword){
-                            Toast.makeText(context, "Retype password", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(context, "$firstname signed up!", Toast.LENGTH_SHORT).show()
-                            val intent = Intent(context, Homepage::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            }
-                            intent.putExtra("firstname", firstname)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
+                modifier = Modifier.fillMaxWidth()
             )
         }
-        Spacing(80.dp)
+        item{
+            Spacing(8.dp)
+            ConstraintLayout(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val guidelines = setupColumnGuidelines()
+
+                val (signUpButton) = createRefs()
+
+                UIButton(
+                    "Sign up",
+                    modifier = Modifier
+                        .constrainAs(signUpButton) {
+                            start.linkTo(guidelines.c2start)
+                            end.linkTo(guidelines.c3end)
+                            width = Dimension.fillToConstraints },
+                    onClickAction = {
+                        if(firstname.isEmpty() || lastname.isEmpty()
+                            || username.isEmpty() || password.isEmpty()
+                            || confirmPassword.isEmpty()){
+                            Toast.makeText(context, "Please fill up all the fields", Toast.LENGTH_SHORT).show()
+                        } else {
+                            if(password != confirmPassword){
+                                Toast.makeText(context, "Retype password", Toast.LENGTH_SHORT).show()
+                            } else {
+                                try{
+                                    AccountFunctions.handleSignUp(firstname, lastname, middlename, username, password)
+                                    Toast.makeText(context, "$firstname signed up!", Toast.LENGTH_SHORT).show()
+                                    val intent = Intent(context, Homepage::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                    }
+                                    intent.putExtra("firstname", firstname)
+                                    context.startActivity(intent)
+                                } catch(e: AccountException){
+                                    Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            Spacing(80.dp)
+        }
     }
 }
 

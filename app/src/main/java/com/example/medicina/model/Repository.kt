@@ -87,6 +87,11 @@ object Repository {
 
     private val _accounts = MutableStateFlow(TestData.AccountRepository.toList())
     val accounts: StateFlow<List<Account>> = _accounts
+
+    init {
+        println("Repository initialized with accounts size: ${_accounts.value.size}")
+    }
+
     fun getAllAccounts(): StateFlow<List<Account>> = accounts
 
     fun getAccountById(id: Int): Account? = TestData.AccountRepository.find { it.id == id }

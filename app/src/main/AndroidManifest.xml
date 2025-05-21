@@ -23,7 +23,8 @@
             android:name=".view.SignUpActivity"
             android:exported="false"
             android:label="@string/title_activity_sign_up_contact"
-            android:theme="@style/Theme.ComposePractice" />
+            android:theme="@style/Theme.ComposePractice"
+            android:windowSoftInputMode="adjustResize"/>
         <activity
             android:name=".view.MainActivity"
             android:exported="true"

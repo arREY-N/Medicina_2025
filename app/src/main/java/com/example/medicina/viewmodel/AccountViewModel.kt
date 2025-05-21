@@ -2,6 +2,7 @@ package com.example.medicina.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.model.Account
 import com.example.medicina.model.Designation
 import com.example.medicina.model.Repository
@@ -14,8 +15,17 @@ import kotlinx.coroutines.flow.stateIn
 class AccountViewModel : ViewModel() {
     private val repository = Repository
 
-    private val _accounts = MutableStateFlow<List<Account>>(emptyList())
-    val accounts: MutableStateFlow<List<Account>> = _accounts
+    val accounts = repository.getAllAccounts()
+
+    private val _userDesignation = MutableStateFlow(Designation())
+    val userDesignation: StateFlow<Designation> = _userDesignation
+
+    fun setDesignation(id: Int){
+        val currentAccount = accounts.value.find { it.id == id }?.designationID ?: 2
+
+        _userDesignation.value = repository.getDesignationById(currentAccount) ?: Designation()
+    }
+
 
     private val _account = MutableStateFlow(Account())
     val account: StateFlow<Account> = _account
@@ -54,8 +64,7 @@ class AccountViewModel : ViewModel() {
         _editAccount.value = transform(_editAccount.value)
     }
 
+    fun logIn(){
 
-    init{
-        _designations.value = repository.getAllDesignation()
     }
 }

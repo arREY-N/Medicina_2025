@@ -15,6 +15,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
@@ -53,7 +54,7 @@ fun DefaultPreview() {
 }
 
 @Composable
-fun LogInScreen(){
+fun XLogInScreen(){
     val scrollState = rememberScrollState()
 
     Column(modifier = Modifier
@@ -162,5 +163,126 @@ fun LogInScreen(){
             )
         }
         Spacing(80.dp)
+    }
+}
+
+@Composable
+fun LogInScreen() {
+    val scrollState = rememberScrollState()
+
+    val context = LocalContext.current
+    var username by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .imePadding() // <- Add this line to respect keyboard space
+    ) {
+        ConstraintLayout(
+            modifier = Modifier
+                .fillMaxWidth() // Use fillMaxWidth, not fillMaxSize
+        ) {
+            val guidelines = setupColumnGuidelines()
+
+            val (
+                usernameField,
+                passwordField,
+                loginButton,
+                signUpButton,
+                logo
+            ) = createRefs()
+
+            Surface(
+                modifier = Modifier
+                    .width(300.dp)
+                    .height(200.dp)
+                    .constrainAs(logo) {
+                        top.linkTo(parent.top, margin = 144.dp)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    },
+                color = CustomWhite
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logo_green),
+                    contentDescription = "navigation icon",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
+            }
+
+            InputField(
+                inputName = "Username",
+                inputHint = "Enter your username",
+                inputValue = username,
+                onValueChange = { username = it },
+                modifier = Modifier
+                    .constrainAs(usernameField) {
+                        top.linkTo(logo.bottom)
+                        start.linkTo(parent.start)
+                    }
+            )
+
+            InputField(
+                inputName = "Password",
+                inputHint = "Enter your password",
+                visualTransformation = PasswordVisualTransformation(),
+                inputValue = password,
+                onValueChange = { password = it },
+                modifier = Modifier.constrainAs(passwordField) {
+                    top.linkTo(usernameField.bottom, margin = 8.dp)
+                    start.linkTo(guidelines.c1start)
+                }
+            )
+
+            UIButton(
+                "Log in",
+                modifier = Modifier
+                    .constrainAs(loginButton) {
+                        top.linkTo(passwordField.bottom, margin = 24.dp)
+                        start.linkTo(guidelines.c2start)
+                        end.linkTo(guidelines.c3end)
+                        width = Dimension.fillToConstraints
+                    },
+                onClickAction = {
+                    if (username.isEmpty() || password.isEmpty()) {
+                        Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    } else {
+                        try{
+                            if (AccountFunctions.handleLogin(username, password)) {
+                                Toast.makeText(context, "Successful login!", Toast.LENGTH_SHORT).show()
+                                val intent = Intent(context, Homepage::class.java)
+                                context.startActivity(intent)
+                                (context as? ComponentActivity)?.finish()
+                            } else {
+                                Toast.makeText(context, "Incorrect username or password", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: AccountException){
+                            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            )
+
+            UIButton(
+                "Sign up",
+                modifier = Modifier
+                    .constrainAs(signUpButton) {
+                        top.linkTo(loginButton.bottom, margin = 8.dp)
+                        start.linkTo(guidelines.c2start)
+                        end.linkTo(guidelines.c3end)
+                        width = Dimension.fillToConstraints
+                    },
+                isCTA = false,
+                onClickAction = {
+                    val intent = Intent(context, SignUpActivity::class.java)
+                    context.startActivity(intent)
+                }
+            )
+        }
+
+        Spacing(80.dp) // Keep this if you want some bottom space
     }
 }
