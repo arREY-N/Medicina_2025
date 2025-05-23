@@ -1,12 +1,15 @@
 package com.example.medicina.components
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,142 +52,189 @@ import com.example.medicina.viewmodel.MedicineViewModel
 import com.example.medicina.viewmodel.RegulationViewModel
 import java.util.Locale
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.platform.LocalContext
+import com.example.medicina.ui.theme.CustomGray
+import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.ui.theme.CustomWhite
 import com.example.medicina.viewmodel.BrandedGenericViewModel
+import com.example.medicina.viewmodel.InventoryViewModel
+import com.example.medicina.viewmodel.OrderViewModel
+import com.example.medicina.viewmodel.SupplierViewModel
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun ReadMedicine(
     medicineId: Int,
     navController: NavController,
-    viewModel: MedicineViewModel,
+    medicineViewModel: MedicineViewModel,
+    genericViewModel: GenericViewModel,
+    orderViewModel: OrderViewModel,
+    inventoryViewModel: InventoryViewModel,
+    supplierViewModel: SupplierViewModel,
     brandedGenericViewModel: BrandedGenericViewModel
 ) {
-    val scrollState = rememberScrollState()
 
-    val medicineData by viewModel.medicineData.collectAsState()
-    val medicineCategory by viewModel.medicineCategory.collectAsState()
-    val medicineRegulation by viewModel.medicineRegulation.collectAsState()
-
-    val genericNames by brandedGenericViewModel.currentGenerics.collectAsState()
+    val medicineData by medicineViewModel.medicineData.collectAsState()
+    val medicineCategory by medicineViewModel.medicineCategory.collectAsState()
+    val medicineRegulation by medicineViewModel.medicineRegulation.collectAsState()
+    val medicines by inventoryViewModel.medicineMap.collectAsState()
+    val suppliers by supplierViewModel.supplierMap.collectAsState()
 
     LaunchedEffect(medicineId) {
-        viewModel.getMedicineById(medicineId)
-        brandedGenericViewModel.getGenericsId(medicineId)
+        brandedGenericViewModel.reset()
+        medicineViewModel.getMedicineById(medicineId)
+        brandedGenericViewModel.getGenericsById(medicineId)
     }
 
     LaunchedEffect(medicineData) {
-        viewModel.getMedicineCategory(medicineData.categoryId)
-        viewModel.getMedicineRegulation(medicineData.regulationId)
+        medicineViewModel.getMedicineCategory(medicineData.categoryId)
+        medicineViewModel.getMedicineRegulation(medicineData.regulationId)
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .verticalScroll(scrollState)
-    ) {
-        ConstraintLayout(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val guidelines = setupColumnGuidelines()
-
-            val (
-                overview,
-                editButton,
-                description,
-                infoCard1,
-                infoCard2,
-                inventoryText,
-                medOrders) = createRefs()
-
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = Global.edgeMargin),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+        item {
             MedicineOverview(
-                modifier = Modifier.constrainAs(overview){
-                    top.linkTo(parent.top, margin = 16.dp)
-                },
                 brandName = medicineData.brandName,
-                genericName = genericNames.toString(),
+                genericName = brandedGenericViewModel.getGenericNamesText(medicineId),
                 price = String.format(Locale.US, "%.2f", medicineData.price),
                 category = medicineCategory.categoryName,
                 regulation = medicineRegulation.regulation
             )
+        }
 
-            Surface(
-                modifier = Modifier
-                    .constrainAs(editButton) {
-                        top.linkTo(overview.top, margin = 4.dp)
-                        end.linkTo(overview.end)
-                    }
-                    .size(40.dp),
-                color = Color.Transparent,
-                shape = RoundedCornerShape(50.dp)
+        item{
+            ExpandableTextSurface(
+                modifier = Modifier,
+                text = medicineData.description
+            )
+        }
+
+        item{
+            ConstraintLayout(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Button(
-                    onClick = {
+                val (editButton) = createRefs()
+
+                Surface(
+                    modifier = Modifier
+                        .constrainAs(editButton) {
+                            top.linkTo(parent.top)
+                            start.linkTo(parent.start)
+                        }
+                        .fillMaxWidth(),
+                    color = Color.Transparent,
+                    shape = RoundedCornerShape(50.dp)
+                ) {
+                    UIButton(
+                        text = "Edit",
+                        modifier =  Modifier.fillMaxSize(),
+                    onClickAction = {
                         navController.navigate(Screen.UpsertMedicine.createRoute(medicineId))
                     },
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CustomGreen
-                    ),
-                    shape = RoundedCornerShape(50.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.edit),
-                        contentDescription = "Edit button",
-                        modifier = Modifier.size(30.dp),
-                        contentScale = ContentScale.Fit
+                    isCTA = false,
+                    height = 40.dp
                     )
                 }
             }
-
-            ExpandableTextSurface(
-                modifier = Modifier.constrainAs(description){
-                    top.linkTo(overview.bottom, margin = 8.dp)
-                },
-                text = medicineData.description
-            )
-
-            Text(
-                text = "Inventory",
-                modifier = Modifier.constrainAs(inventoryText){
-                    top.linkTo(description.bottom, margin = 16.dp)
-                    start.linkTo(guidelines.c1start)
-                },
-                fontSize = 24.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = CustomBlack)
-
-            InfoCard(
-                modifier = Modifier.constrainAs(infoCard1){
-                    top.linkTo(inventoryText.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c2end)
-                    width = Dimension.fillToConstraints},
-                infoLabel = "Expiring Quantity",
-                infoValue = viewModel.getExpiringQuantity(medicineId)
-            )
-
-            InfoCard(
-                modifier = Modifier.constrainAs(infoCard2){
-                    top.linkTo(inventoryText.bottom, margin = 8.dp)
-                    start.linkTo(guidelines.c3start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                },
-                infoLabel = "Available Quantity",
-                infoValue = viewModel.getTotalQuantity(medicineId)
-            )
-
-            val tableData = viewModel.getOrderHistory(medicineId)
-
-            OrderTable(modifier = Modifier.constrainAs(medOrders){
-                top.linkTo(infoCard1.bottom, margin = 8.dp)
-                start.linkTo(guidelines.c1start)
-                end.linkTo(guidelines.c4end)
-                width = Dimension.fillToConstraints
-            },
-                tableData = tableData
-            )
         }
-        Spacing(24.dp)
+
+
+        item{
+            ConstraintLayout(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val guidelines = setupColumnGuidelines()
+
+                val (infoCard1, infoCard2, inventoryText) = createRefs()
+
+                Text(
+                    text = "Inventory",
+                    modifier = Modifier.constrainAs(inventoryText){
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                    },
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = CustomBlack)
+
+                InfoCard(
+                    modifier = Modifier.constrainAs(infoCard1){
+                        top.linkTo(inventoryText.bottom, margin = 8.dp)
+                        start.linkTo(guidelines.c1start)
+                        end.linkTo(guidelines.c2end)
+                        width = Dimension.fillToConstraints},
+                    infoLabel = "Expiring Quantity",
+                    infoValue = orderViewModel.getExpiringQuantity(medicineId)
+                )
+
+                InfoCard(
+                    modifier = Modifier.constrainAs(infoCard2){
+                        top.linkTo(inventoryText.bottom, margin = 8.dp)
+                        start.linkTo(guidelines.c3start)
+                        end.linkTo(guidelines.c4end)
+                        width = Dimension.fillToConstraints
+                    },
+                    infoLabel = "Available Quantity",
+                    infoValue = orderViewModel.getTotalQuantity(medicineId)
+                )
+            }
+        }
+
+        val tableData = orderViewModel.getOrderHistory(medicineId)
+
+        if(tableData.isNotEmpty()) {
+            item{
+                Text(
+                    text = "Orders",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = CustomBlack)
+            }
+
+            items(tableData) { order ->
+                val orderedItem = medicines[order.medicineId]?.copy()
+                val supplier = suppliers[order.supplierId]?.copy()
+                val orderDate = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+
+                InfoPills(
+                    modifier = Modifier.fillMaxWidth(),
+                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(medicineCategory.id))),
+                    content = {
+                        OrderPillText(
+                            orderedItem = orderedItem?.brandName ?: "",
+                            supplier = supplier?.name ?: "",
+                            date = orderDate,
+                            quantity = order.quantity,
+                            price = String.format(Locale.US, "%.2f", order.price)
+                        )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+                    }
+                )
+            }
+        } else {
+            item{
+                Spacing(12.dp)
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "No order history",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                Spacing(12.dp)
+            }
+        }
     }
 }
 
@@ -194,12 +244,14 @@ fun UpsertMedicineScreen(
     medicineViewModel: MedicineViewModel,
     regulationViewModel: RegulationViewModel,
     categoryViewModel: CategoryViewModel,
-    genericViewModel: GenericViewModel
+    brandedGenericViewModel: BrandedGenericViewModel,
+    navController: NavController
 ) {
-    val genericMap by genericViewModel.genericMap.collectAsState()
-    val generics by genericViewModel.generics.collectAsState()
+    val genericMap by brandedGenericViewModel.genericMap.collectAsState()
+    val generics by brandedGenericViewModel.generics.collectAsState()
     val genericNames = generics.map { it.genericName }
-    val genericList by genericViewModel.genericData.collectAsState()
+
+    val genericList by brandedGenericViewModel.upsertGenericNames.collectAsState()
 
     val categories by categoryViewModel.categories.collectAsState()
     val categoryMap by categoryViewModel.categoryMap.collectAsState()
@@ -216,12 +268,15 @@ fun UpsertMedicineScreen(
     var selectedItem by remember { mutableStateOf("") }
 
 
-
     LaunchedEffect(medicineID) {
         if(medicineID == -1){
             medicineViewModel.reset()
+            brandedGenericViewModel.reset()
         } else {
-            medicineID?.let { medicineViewModel.getMedicineById(medicineID) }
+            medicineID?.let {
+                medicineViewModel.getMedicineById(medicineID)
+                brandedGenericViewModel.getGenericsById(medicineID)
+            }
         }
     }
 
@@ -234,10 +289,11 @@ fun UpsertMedicineScreen(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            Spacing(16.dp)
+            Spacing(8.dp)
             InputField(
                 inputName = "Brand Name",
                 inputHint = "Enter brand name",
@@ -248,18 +304,17 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            Spacing(8.dp)
             DropdownInputField(
-                inputName = "Add Generic Name",
-                inputHint = "Select Generic Name",
-                selectedValue = selectedItem,
+                inputName = "Generic Name/s",
+                inputHint = "Add Generic Name",
+                selectedValue = "",
                 onValueChange = { newSelection ->
                     selectedItem = newSelection
 
                     val selectedGeneric =
                         genericMap.values.firstOrNull { it.genericName == newSelection }
                     selectedGeneric?.let {
-                        genericViewModel.updateGeneric(selectedGeneric)
+                        brandedGenericViewModel.updateGenericNames(selectedGeneric)
                     }
                 },
                 dropdownOptions = genericNames,
@@ -280,19 +335,22 @@ fun UpsertMedicineScreen(
                                 .wrapContentWidth()
                                 .height(50.dp),
                             onClickAction = {
-                                genericViewModel.removeGeneric(generic)
+                                brandedGenericViewModel.removeGeneric(generic)
                             },
                             isCTA = false
                         )
                     }
                 }
             } else {
-                Text("No generic names selected")
+                Text(
+                    text = "No generic names selected",
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+                    color = CustomGray
+                )
             }
         }
 
         item {
-            Spacing(8.dp)
             InputField(
                 inputName = "Price",
                 inputHint = "Enter price",
@@ -307,7 +365,6 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            Spacing(8.dp)
             DropdownInputField(
                 inputName = "Regulation",
                 inputHint = "Select regulation",
@@ -326,7 +383,6 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            Spacing(8.dp)
             DropdownInputField(
                 inputName = "Category",
                 inputHint = "Select category",
@@ -345,7 +401,6 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            Spacing(8.dp)
             InputField(
                 inputName = "Description",
                 inputHint = "Enter description",
@@ -359,6 +414,32 @@ fun UpsertMedicineScreen(
                     .fillMaxWidth()
                     .height(180.dp)
             )
+        }
+
+        item{
+            val context = LocalContext.current
+            Confirm(
+                action = "Confirm Medicine",
+                confirmOnclick = {
+                    val id = medicineViewModel.save()
+                    medicineViewModel.getMedicineById(id)
+                    val savedMedicine = medicineViewModel.upsertMedicine
+                    brandedGenericViewModel.save(id)
+                    Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
+                    medicineViewModel.reset()
+                    navController.popBackStack()
+                },
+                cancelOnclick = {
+                    medicineViewModel.delete()
+                    medicineViewModel.reset()
+                    navController.navigate(Screen.Inventory.route){
+                        popUpTo(Screen.Inventory.route) {
+                            inclusive = true
+                        }
+                    }
+                }
+            )
+            Spacing(80.dp)
         }
     }
 }

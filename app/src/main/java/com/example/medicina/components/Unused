@@ -1442,3 +1442,71 @@ fun Inventory(navController: NavController){
         }
     }
 }
+
+else if (showActionBar){
+                Surface(
+                    color = CustomWhite,
+                    modifier = Modifier
+                        .height(100.dp)
+                        .background(CustomWhite)
+                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
+                ) {
+                    Confirm(
+                        action = when (baseRoute) {
+                            "upsertMedicine" -> "Confirm Medicine"
+                            "upsertOrder" -> "Confirm Order"
+                            "upsertCategory" -> "Confirm Category"
+                            "upsertSupplier" -> "Confirm Supplier"
+                            else -> "Confirm Action"
+                        },
+                        confirmOnclick = {
+                            when (baseRoute) {
+                                "upsertMedicine" -> {
+                                    val id = medicineViewModel.save()
+                                    medicineViewModel.getMedicineById(id)
+                                    val savedMedicine = medicineViewModel.upsertMedicine
+                                    genericViewModel.setId(id)
+                                    genericViewModel.save()
+                                    Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
+                                    medicineViewModel.reset()
+                                }
+                                "upsertOrder" -> {
+                                    orderViewModel.save()
+                                    orderViewModel.reset()
+                                }
+                                "upsertCategory" -> {
+                                    categoryViewModel.save()
+                                    categoryViewModel.reset()
+                                }
+                                "upsertSupplier" -> {
+                                    supplierViewModel.save()
+                                    supplierViewModel.reset()
+                                }
+                                else -> {}
+                            }
+                            navController.popBackStack()
+                        },
+                        cancelOnclick = {
+                            when (baseRoute) {
+                                "upsertMedicine" -> {
+                                    medicineViewModel.delete()
+                                    medicineViewModel.reset()
+                                }
+                                "upsertOrder" -> {
+                                    orderViewModel.delete()
+                                    orderViewModel.reset()
+                                }
+                                "upsertCategory" -> {
+                                    categoryViewModel.delete()
+                                    categoryViewModel.reset()
+                                }
+                                "upsertSupplier" -> {
+                                    supplierViewModel.delete()
+                                    supplierViewModel.reset()
+                                }
+                                else -> {}
+                            }
+                            navController.popBackStack()
+                        }
+                    )
+                }

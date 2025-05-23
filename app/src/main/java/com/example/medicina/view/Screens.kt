@@ -9,9 +9,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -70,7 +70,6 @@ import com.example.medicina.components.InputField
 import com.example.medicina.components.InventoryPillText
 import com.example.medicina.components.NavigationBar
 import com.example.medicina.components.NotificationPillText
-import com.example.medicina.components.OrdersPage
 import com.example.medicina.components.ReadMedicine
 import com.example.medicina.components.Screen
 import com.example.medicina.components.TopNavigation
@@ -102,11 +101,18 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import com.example.medicina.components.OrderPillText
+import com.example.medicina.components.Spacing
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.GenericViewModel
-
+import com.example.medicina.viewmodel.ScreenViewModel
+import kotlinx.coroutines.delay
+import android.graphics.Color as AndroidColor
 
 @Composable
 fun ScreenContainer(
@@ -161,7 +167,8 @@ fun MainScreen(){
         Screen.Search.route -> true to "Search"
         Screen.Inventory.route -> true to "Inventory"
         Screen.Orders.route -> true to "Orders"
-
+        Screen.Notifications.route -> false to "Notification"
+        Screen.ViewNotification.route -> false to "Notification"
         else -> false to "Medicina"
     }
 
@@ -179,17 +186,9 @@ fun MainScreen(){
         "supplier"
     )
 
-    val actionBarRoutes = listOf(
-        "upsertMedicine",
-        "upsertOrder",
-        "upsertSupplier",
-        "upsertCategory"
-    )
-
     val baseRoute = getBaseRoute(currentRoute)
 
     val showBottomBar = bottomBarRoutes.any { it == baseRoute }
-    val showActionBar = actionBarRoutes.any { it == baseRoute }
 
     Scaffold(
         topBar = {
@@ -216,65 +215,6 @@ fun MainScreen(){
                 ) {
                     NavigationBar(navController)
                 }
-            } else if (showActionBar){
-                Surface(
-                    color = CustomWhite,
-                    modifier = Modifier
-                        .height(100.dp)
-                        .background(CustomWhite)
-                        .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
-                ) {
-                    Confirm(
-                        action = "Confirm Medicine",
-                        confirmOnclick = {
-                            when (baseRoute) {
-                                "upsertMedicine" -> {
-                                    val id = medicineViewModel.save()
-                                    medicineViewModel.getMedicineById(id)
-                                    val savedMedicine = medicineViewModel.upsertMedicine
-                                    Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
-                                    medicineViewModel.reset()
-                                }
-                                "upsertOrder" -> {
-                                    orderViewModel.save()
-                                    orderViewModel.reset()
-                                }
-                                "upsertCategory" -> {
-                                    categoryViewModel.save()
-                                    categoryViewModel.reset()
-                                }
-                                "upsertSupplier" -> {
-                                    supplierViewModel.save()
-                                    supplierViewModel.reset()
-                                }
-                                else -> {}
-                            }
-                            navController.popBackStack()
-                        },
-                        cancelOnclick = {
-                            when (baseRoute) {
-                                "upsertMedicine" -> {
-                                    medicineViewModel.delete()
-                                    medicineViewModel.reset()
-                                }
-                                "upsertOrder" -> {
-                                    orderViewModel.delete()
-                                    orderViewModel.reset()
-                                }
-                                "upsertCategory" -> {
-                                    categoryViewModel.delete()
-                                    categoryViewModel.reset()
-                                }
-                                "upsertSupplier" -> {
-                                    supplierViewModel.delete()
-                                    supplierViewModel.reset()
-                                }
-                                else -> {}
-                            }
-                            navController.popBackStack()
-                        }
-                    )
-                }
             } else if (currentRoute == Screen.MainMenu.route) {
                 Surface(
                     color = CustomWhite,
@@ -296,7 +236,6 @@ fun MainScreen(){
                             .fillMaxHeight()
                     )
                 }
-
             }
         },
         modifier = Modifier.imePadding()
@@ -332,8 +271,12 @@ fun MainScreen(){
                 .padding(innerPadding)
                 .background(CustomWhite)
         ) {
+
             // main screens
-            composable(Screen.Home.route) { Home(navController, searchViewModel) }
+            composable(Screen.Home.route) {
+                Home(navController, searchViewModel)
+            }
+
             composable(
                 route = Screen.Search.route,
                 arguments = listOf(navArgument("searchItem") {
@@ -342,13 +285,46 @@ fun MainScreen(){
                     nullable = true
                 })
             ) { navBackStackEntry ->
-                val searchItem = navBackStackEntry.arguments?.getString("searchItem") ?: ""
-
-                ScreenContainer { SearchPage(navController, searchViewModel) }
+                ScreenContainer {
+                    SearchPage(
+                        navController,
+                        searchViewModel,
+                        brandedGenericViewModel,
+                        orderViewModel
+                    )
+                }
             }
-            composable(Screen.Inventory.route) { ScreenContainer { InventoryPage(navController, inventoryViewModel, categoryViewModel) } }
-            composable(Screen.Orders.route) { ScreenContainer { OrdersPage(navController, orderViewModel, inventoryViewModel, supplierViewModel) } }
-            composable(Screen.MainMenu.route) { ScreenContainer { MenuScreen(navController) } }
+
+            composable(Screen.Inventory.route) {
+                ScreenContainer {
+                    InventoryPage(
+                        navController,
+                        inventoryViewModel,
+                        genericViewModel,
+                        orderViewModel,
+                        medicineViewModel,
+                        brandedGenericViewModel
+                    )
+                }
+            }
+
+            composable(Screen.Orders.route) {
+                ScreenContainer {
+                    OrdersPage(
+                        navController,
+                        orderViewModel,
+                        inventoryViewModel,
+                        supplierViewModel,
+                        medicineViewModel
+                    )
+                }
+            }
+
+            composable(Screen.MainMenu.route) {
+                ScreenContainer {
+                    MenuScreen(navController)
+                }
+            }
 
             // notifications screen
             composable(Screen.Notifications.route) {
@@ -404,7 +380,8 @@ fun MainScreen(){
                         medicineViewModel,
                         regulationViewModel,
                         categoryViewModel,
-                        genericViewModel
+                        brandedGenericViewModel,
+                        navController
                     )
                 }
             }
@@ -417,7 +394,18 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val medicineID = backStackEntry.arguments?.getInt("medicineID") ?: 0
 
-                ScreenContainer { ReadMedicine(medicineID, navController, medicineViewModel, brandedGenericViewModel) }
+                ScreenContainer {
+                    ReadMedicine(
+                        medicineID,
+                        navController,
+                        medicineViewModel,
+                        genericViewModel,
+                        orderViewModel,
+                        inventoryViewModel,
+                        supplierViewModel,
+                        brandedGenericViewModel
+                    )
+                }
             }
             composable(
                 route = Screen.UpsertOrder.route,
@@ -427,7 +415,15 @@ fun MainScreen(){
                 })
             ) { backStackEntry ->
                 val orderID = backStackEntry.arguments?.getInt("orderID")
-                ScreenContainer{ UpsertOrderScreen(orderID, orderViewModel, inventoryViewModel, supplierViewModel) }
+                ScreenContainer{
+                    UpsertOrderScreen(
+                        orderID,
+                        orderViewModel,
+                        inventoryViewModel,
+                        supplierViewModel,
+                        navController
+                    )
+                }
             }
 
             // categories screen
@@ -454,7 +450,16 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val categoryID = backStackEntry.arguments?.getInt("categoryID") ?: -1
 
-                ScreenContainer{ CategoryMedicine(categoryID, navController, categoryViewModel) }
+                ScreenContainer {
+                    CategoryMedicine(
+                        categoryID,
+                        navController,
+                        categoryViewModel,
+                        brandedGenericViewModel,
+                        medicineViewModel,
+                        orderViewModel
+                    )
+                }
             }
 
             // suppliers screen
@@ -584,7 +589,14 @@ fun Home(
                                 end.linkTo(guidelines.c4end)
                             }
                             .clickable {
-                                navController.navigate(Screen.Categories.route)
+                                navController.navigate(Screen.Categories.route){
+                                    popUpTo(Screen.Home.route) {
+                                        inclusive = false
+                                        saveState = true
+                                    }
+                                    launchSingleTop = false
+                                    restoreState = true
+                                }
                             },
                         color = CustomBlack
                     )
@@ -599,7 +611,7 @@ fun Home(
                         .padding(vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    categoriesList.forEach { category ->
+                    categoriesList.take(4).forEach { category ->
                         ButtonBox(
                             text = category.categoryName,
                             onClickAction = {
@@ -649,7 +661,14 @@ fun Home(
                                 end.linkTo(guidelines.c4end)
                             }
                             .clickable {
-                                navController.navigate(Screen.Notifications.route)
+                                navController.navigate(Screen.Notifications.route){
+                                    popUpTo(Screen.Home.route) {
+                                        inclusive = false
+                                        saveState = true
+                                    }
+                                    launchSingleTop = false
+                                    restoreState = true
+                                }
                             },
                         color = CustomBlack
                     )
@@ -690,7 +709,9 @@ fun Home(
 @Composable
 fun SearchPage(
     navController: NavController,
-    searchViewModel: SearchViewModel
+    searchViewModel: SearchViewModel,
+    brandedGenericViewModel: BrandedGenericViewModel,
+    orderViewModel: OrderViewModel
 ) {
     val context = LocalContext.current
     val searchItem by searchViewModel.searchItem.collectAsState()
@@ -746,8 +767,8 @@ fun SearchPage(
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
-                            genericName = medicine.genericName,
-                            quantity = medicine.quantity.toString(),
+                            genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
@@ -779,12 +800,11 @@ fun MenuScreen(navController: NavController){
                 fontSize = 14.sp,
                 text = "Account",
                 onClickAction = {
-                    navController.navigate(Screen.ViewAccount.createRoute(0)) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
+                    navController.navigate(Screen.ViewAccount.createRoute(UserSession.accountID)) {
                         launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Screen.MainMenu.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 inheritedModifier = Modifier.constrainAs(menu1) {
@@ -803,11 +823,10 @@ fun MenuScreen(navController: NavController){
                 text = "Categories",
                 onClickAction = {
                     navController.navigate(Screen.Categories.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
                         launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Screen.MainMenu.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 inheritedModifier = Modifier.constrainAs(menu2) {
@@ -826,61 +845,14 @@ fun MenuScreen(navController: NavController){
                 text = "Inventory",
                 onClickAction = {
                     navController.navigate(Screen.Inventory.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
                         launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Screen.MainMenu.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 inheritedModifier = Modifier.constrainAs(menu3) {
                     top.linkTo(menu1.bottom, margin = 16.dp)
-                    start.linkTo(guidelines.c1start)
-                    end.linkTo(guidelines.c2end)
-                    width = Dimension.fillToConstraints
-                    height = Dimension.ratio("1:1")
-                }
-            )
-
-            ButtonBox(
-                iconId = R.drawable.users_m,
-                iconSize = 120.dp,
-                fontSize = 14.sp,
-                text = "Users",
-                onClickAction = {
-                    navController.navigate(Screen.Accounts.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                inheritedModifier = Modifier.constrainAs(menu4) {
-                    top.linkTo(menu2.bottom, margin = 16.dp)
-                    start.linkTo(guidelines.c3start)
-                    end.linkTo(guidelines.c4end)
-                    width = Dimension.fillToConstraints
-                    height = Dimension.ratio("1:1")
-                }
-            )
-
-            ButtonBox(
-                iconId = R.drawable.suppliers_m,
-                iconSize = 120.dp,
-                fontSize = 14.sp,
-                text = "Suppliers",
-                onClickAction = {
-                    navController.navigate(Screen.Suppliers.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                inheritedModifier = Modifier.constrainAs(menu5) {
-                    top.linkTo(menu3.bottom, margin = 16.dp)
                     start.linkTo(guidelines.c1start)
                     end.linkTo(guidelines.c2end)
                     width = Dimension.fillToConstraints
@@ -895,21 +867,66 @@ fun MenuScreen(navController: NavController){
                 text = "Notifications",
                 onClickAction = {
                     navController.navigate(Screen.Notifications.route) {
-                        popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
-                        }
                         launchSingleTop = true
-                        restoreState = true
+                        popUpTo(Screen.MainMenu.route) {
+                            inclusive = true
+                        }
                     }
                 },
-                inheritedModifier = Modifier.constrainAs(menu6) {
-                    top.linkTo(menu4.bottom, margin = 16.dp)
+                inheritedModifier = Modifier.constrainAs(menu4) {
+                    top.linkTo(menu2.bottom, margin = 16.dp)
                     start.linkTo(guidelines.c3start)
                     end.linkTo(guidelines.c4end)
                     width = Dimension.fillToConstraints
                     height = Dimension.ratio("1:1")
                 }
             )
+
+            if(UserSession.designationID != 2){
+                ButtonBox(
+                    iconId = R.drawable.suppliers_m,
+                    iconSize = 120.dp,
+                    fontSize = 14.sp,
+                    text = "Suppliers",
+                    onClickAction = {
+                        navController.navigate(Screen.Suppliers.route) {
+                            launchSingleTop = true
+                            popUpTo(Screen.MainMenu.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    inheritedModifier = Modifier.constrainAs(menu5) {
+                        top.linkTo(menu3.bottom, margin = 16.dp)
+                        start.linkTo(guidelines.c1start)
+                        end.linkTo(guidelines.c2end)
+                        width = Dimension.fillToConstraints
+                        height = Dimension.ratio("1:1")
+                    }
+                )
+
+                ButtonBox(
+                    iconId = R.drawable.users_m,
+                    iconSize = 120.dp,
+                    fontSize = 14.sp,
+                    text = "Users",
+                    onClickAction = {
+                        navController.navigate(Screen.Accounts.route) {
+                            launchSingleTop = true
+                            popUpTo(Screen.MainMenu.route) {
+                                inclusive = true
+                            }
+                        }
+                    },
+                    inheritedModifier = Modifier.constrainAs(menu6) {
+                        top.linkTo(menu4.bottom, margin = 16.dp)
+                        start.linkTo(guidelines.c3start)
+                        end.linkTo(guidelines.c4end)
+                        width = Dimension.fillToConstraints
+                        height = Dimension.ratio("1:1")
+                    }
+                )
+            }
         }
     }
 }
@@ -922,32 +939,29 @@ fun NotificationsPage(
     val notifications by notificationViewModel.notifications.collectAsState()
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            Spacing(Global.edgeMargin)
+        }
         if (notifications.isNotEmpty()) {
-            item {
-                Column(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ){
-                    notifications.forEach { notification ->
-                        InfoPills(
-                            modifier = Modifier
-                                .fillMaxWidth(),
-                            infoColor = CustomRed,
-                            content = {
-                                NotificationPillText(
-                                    title = notification.notificationBanner,
-                                    subtitle = notification.notificationMessage,
-                                    details = notification.notificationOverview
-                                )
-                            },
-                            onClickAction = {
-                                navController.navigate(Screen.ViewNotification.createRoute(notification.id))
-                            }
+            items(notifications) { notification ->
+                InfoPills(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    infoColor = CustomRed,
+                    content = {
+                        NotificationPillText(
+                            title = notification.notificationBanner,
+                            subtitle = notification.notificationMessage,
+                            details = notification.notificationOverview
                         )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.ViewNotification.createRoute(notification.id))
                     }
-                }
+                )
             }
         }
     }
@@ -967,16 +981,33 @@ fun Notification(
     }
 
     LazyColumn (
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            Text(notificationData.notificationBanner)
+            Spacing(Global.edgeMargin)
+            Text(
+                notificationData.notificationBanner,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = CustomBlack
+            )
         }
         item{
-            Text(notificationData.date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+            Text(
+                notificationData.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                color = CustomBlack
+            )
+            Spacing(8.dp)
+            HorizontalDivider()
         }
+
         item{
-            Text(notificationData.notificationMessage)
+            Text(
+                notificationData.notificationMessage,
+                color = CustomBlack
+            )
         }
     }
 
@@ -986,7 +1017,10 @@ fun Notification(
 fun InventoryPage(
     navController: NavController,
     viewModel: InventoryViewModel,
-    categoryViewModel: CategoryViewModel
+    genericViewModel: GenericViewModel,
+    orderViewModel: OrderViewModel,
+    medicineViewModel: MedicineViewModel,
+    brandedGenericViewModel: BrandedGenericViewModel
 ) {
 
     val medicines by viewModel.medicines.collectAsState()
@@ -1011,12 +1045,12 @@ fun InventoryPage(
             items(medicines) { medicine ->
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomRed,
+                    infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
-                            genericName = medicine.genericName,
-                            quantity = medicine.quantity.toString(),
+                            genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
@@ -1024,6 +1058,62 @@ fun InventoryPage(
                         navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
                     }
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun OrdersPage(
+    navController: NavController,
+    orderViewModel: OrderViewModel,
+    inventoryViewModel: InventoryViewModel,
+    supplierViewModel: SupplierViewModel,
+    medicineViewModel: MedicineViewModel
+){
+    val orders by orderViewModel.orders.collectAsState()
+    val medicines by inventoryViewModel.medicineMap.collectAsState()
+    val suppliers by supplierViewModel.supplierMap.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item{
+            CreateButton(
+                "Add New Order",
+                inheritedModifier = Modifier.fillMaxWidth(),
+                onclick = {
+                    navController.navigate(Screen.UpsertOrder.createRoute(-1))
+                }
+            )
+        }
+
+        if(orders.isNotEmpty()) {
+            items(orders) { order ->
+                val orderedItem = medicines[order.medicineId]?.copy()
+                val supplier = suppliers[order.supplierId]?.copy()
+                val orderDate = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                if (orderedItem != null) {
+                    InfoPills(
+                        modifier = Modifier.fillMaxWidth(),
+                        infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(orderedItem.id))),
+                        content = {
+                            OrderPillText(
+                                orderedItem = orderedItem?.brandName ?: "",
+                                supplier = supplier?.name ?: "",
+                                date = orderDate,
+                                quantity = order.quantity,
+                                price = String.format(Locale.US, "%.2f", order.price)
+                            )
+                        },
+                        onClickAction = {
+                            navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+                        }
+                    )
+                }
             }
         }
     }

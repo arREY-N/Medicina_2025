@@ -57,29 +57,16 @@ class MedicineViewModel : ViewModel() {
         }
     }
 
+    fun getMedicineColor(categoryId: Int): String{
+        val category = repository.getCategoryById(categoryId)
+        return category?.hexColor ?: "#1A998E"
+    }
+
     fun getMedicineRegulation(regulationId: Int){
         val regulation = repository.getRegulationById(regulationId)
         regulation?.let {
             _medicineRegulation.value = it
         }
-    }
-
-    fun getExpiringQuantity(medicineId: Int): Int{
-        val expiringQuantity = 0
-        // get expiring quantity
-        return expiringQuantity
-    }
-
-    fun getTotalQuantity(medicineId: Int): Int{
-        val totalQuantity = 0
-        // get all quantity
-        return totalQuantity
-    }
-
-    fun getOrderHistory(medicineId: Int): List<Order> {
-        val orderList = emptyList<Order>()
-        // get order history
-        return orderList
     }
 
     fun updateData(transform: (Medicine) -> Medicine) {

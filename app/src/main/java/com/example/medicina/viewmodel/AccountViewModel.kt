@@ -6,6 +6,7 @@ import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.model.Account
 import com.example.medicina.model.Designation
 import com.example.medicina.model.Repository
+import com.example.medicina.model.UserSession
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -56,7 +57,13 @@ class AccountViewModel : ViewModel() {
     }
 
     fun saveAccount() {
-        repository.upsertAccount(_editAccount.value)
+        _account.value = repository.upsertAccount(_editAccount.value)
+        UserSession.accountID = _account.value.id
+        UserSession.designationID = _account.value.designationID
+        println("-----Account saved!-----")
+        println("Account ID: ${_account.value.id}")
+        println("Designation ID: ${_account.value.designationID}")
+
         _account.value = editAccount.value
     }
 

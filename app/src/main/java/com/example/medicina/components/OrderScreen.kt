@@ -37,9 +37,10 @@ fun UpsertOrderScreen(
     orderID: Int? = null,
     orderViewModel: OrderViewModel,
     inventoryViewModel: InventoryViewModel,
-    supplierViewModel: SupplierViewModel
+    supplierViewModel: SupplierViewModel,
+    navController: NavController
 ){
-    val context = LocalContext.current
+    var isEditing by remember { mutableStateOf(false) }
 
     val medicineMap by inventoryViewModel.medicineMap.collectAsState()
     val medicines by inventoryViewModel.medicines.collectAsState()
@@ -50,6 +51,7 @@ fun UpsertOrderScreen(
     val supplierNames = suppliers.map { it.name }
 
     val upsertOrder by orderViewModel.upsertOrder.collectAsState()
+    val upsertPrice by orderViewModel.upsertPrice.collectAsState()
 
     var selectedMedicine by remember { mutableStateOf("") }
     var selectedSupplier by remember { mutableStateOf("") }
@@ -60,6 +62,7 @@ fun UpsertOrderScreen(
             selectedSupplier = ""
             selectedMedicine = ""
         } else {
+            isEditing = true
             orderID?.let{
                 orderViewModel.getOrderById(orderID)
             }
@@ -73,11 +76,24 @@ fun UpsertOrderScreen(
                 }
         }
     }
-
-
-    LazyColumn(modifier = Modifier
-        .fillMaxSize()
+    
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = Global.edgeMargin),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        if(upsertOrder.id != -1){
+            item{
+                InputField(
+                    inputName = "Order Date",
+                    inputHint = "Order Date",
+                    inputValue = upsertOrder.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                    editable = false
+                )
+            }
+        }
+
         item{
             DropdownInputField(
                 inputName = "Medicine",
@@ -117,101 +133,78 @@ fun UpsertOrderScreen(
 
         item{
             InputField(
-                inputName = "Quantity",
+                inputName = "Ordered Quantity",
                 inputHint = "Enter quantity",
                 inputValue = if (upsertOrder.quantity == -1) "" else upsertOrder.quantity.toString(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 onValueChange = { newValue ->
-                    val quantity = newValue.toIntOrNull()
-                    if (quantity != null) {
-                        orderViewModel.updateData { it.copy(quantity = quantity) }
-                    }
+                    val quantity = newValue.toIntOrNull() ?: -1
+                    orderViewModel.updateData { it.copy(quantity = quantity) }
                 },
             )
+        }
+
+        if(upsertOrder.id != -1){
+            item{
+                InputField(
+                    inputName = "Remaining Quantity",
+                    inputHint = "Enter quantity",
+                    inputValue = if (upsertOrder.remainingQuantity == -1) "0" else upsertOrder.remainingQuantity.toString(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = { newValue ->
+                        val quantity = newValue.toIntOrNull() ?: -1
+                        orderViewModel.updateData { it.copy(remainingQuantity = quantity) }
+                    },
+                )
+            }
         }
 
         item{
             InputField(
                 inputName = "Price Per Unit",
                 inputHint = "Enter price",
-                inputValue = if (upsertOrder.price == 0f) "" else String.format(Locale.US, "%.2f", upsertOrder.price),
+                inputValue = if (upsertPrice == "") "" else upsertPrice,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                onValueChange = { newValue ->
-                    val price = newValue.toFloatOrNull()
-                    if (price != null){
-                        orderViewModel.updateData{ it.copy(price = price) }
-                    }
-                }
+                onValueChange = { newValue -> orderViewModel.updatePrice(newValue) }
             )
         }
 
         item{
             val selectedDate =
-                if (upsertOrder.orderDate == LocalDate.of(2000, 1, 1)) "Choose date"
-                else upsertOrder.orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                if (upsertOrder.expirationDate == LocalDate.of(2000, 1, 1)) "Choose date"
+                else upsertOrder.expirationDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
 
             DatePickerInputField(
                 inputName = "Expiration Date",
                 inputHint = "Choose date",
                 selectedDate = selectedDate,
                 onDateSelected = { newValue ->
-                    val parsedDate = LocalDate.parse(newValue, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                    orderViewModel.updateData { it.copy(orderDate = parsedDate) }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun OrdersPage(
-    navController: NavController,
-    orderViewModel: OrderViewModel,
-    inventoryViewModel: InventoryViewModel,
-    supplierViewModel: SupplierViewModel
-){
-    val orders by orderViewModel.orders.collectAsState()
-    val medicines by inventoryViewModel.medicineMap.collectAsState()
-    val suppliers by supplierViewModel.supplierMap.collectAsState()
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item{
-            CreateButton(
-                "Add New Order",
-                inheritedModifier = Modifier.fillMaxWidth(),
-                onclick = {
-                    navController.navigate(Screen.UpsertOrder.createRoute(-1))
+                    val parsedDate = LocalDate.parse(newValue, DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                    orderViewModel.updateData { it.copy(expirationDate = parsedDate) }
                 }
             )
         }
 
-        if(orders.isNotEmpty()) {
-            items(orders) { order ->
-                val orderedItem = medicines[order.medicineId]?.copy()
-                val supplier = suppliers[order.supplierId]?.copy()
-                val orderDate = order.orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                InfoPills(
-                    modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomRed,
-                    content = {
-                        OrderPillText(
-                            orderedItem = orderedItem?.brandName ?: "",
-                            supplier = supplier?.name ?: "",
-                            date = orderDate,
-                            quantity = order.quantity,
-                            price = String.format(Locale.US, "%.2f", order.price)
-                        )
-                    },
-                    onClickAction = {
-                        navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+        item {
+            val context = LocalContext.current
+            Confirm(
+                action = "Confirm Order",
+                confirmOnclick = {
+                    orderViewModel.save()
+                    orderViewModel.reset()
+                    navController.popBackStack()
+                },
+                cancelOnclick = {
+                    orderViewModel.delete()
+                    orderViewModel.reset()
+                    navController.navigate(Screen.Inventory.route) {
+                        popUpTo(Screen.Inventory.route) {
+                            inclusive = true
+                        }
                     }
-                )
-            }
+                }
+            )
+            Spacing(80.dp)
         }
     }
 }

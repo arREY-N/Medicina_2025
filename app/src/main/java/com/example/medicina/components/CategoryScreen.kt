@@ -1,6 +1,7 @@
 package com.example.medicina.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,16 +9,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.CategoryViewModel
+import com.example.medicina.viewmodel.GenericViewModel
+import com.example.medicina.viewmodel.MedicineViewModel
+import com.example.medicina.viewmodel.OrderViewModel
 import java.util.Locale
 
 @Composable
@@ -50,6 +60,17 @@ fun UpsertCategoryScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+
+        item{
+            InputField(
+                inputName = "Category Color",
+                inputHint = "#000000",
+                inputValue = if (upsertCategory.hexColor.equals("#9E9E9E")) "" else upsertCategory.hexColor,
+                onValueChange = { newValue -> categoryViewModel.updateData { it.copy(hexColor = newValue) } },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         item{
             InputField(
                 inputName = "Description",
@@ -101,12 +122,13 @@ fun CategoriesScreen(
         if(categories.isNotEmpty()){
             items(categories){ category ->
                 InfoPills(
-                    infoColor = CustomRed,
+                    infoColor = Color(android.graphics.Color.parseColor(category.hexColor)),
                     modifier = Modifier.fillMaxWidth(),
                     content = {
                         CategoryPillText(
                             categoryName = category.categoryName,
-                            medicineNumber = categoryViewModel.getMedicineNumber(category.id)
+                            medicineNumber = categoryViewModel.getMedicineNumber(category.id),
+                            description = category.description
                         )
                     },
                     onClickAction = {
@@ -122,30 +144,48 @@ fun CategoriesScreen(
 fun CategoryMedicine(
     categoryId: Int,
     navController: NavController,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel,
+    brandedGenericViewModel: BrandedGenericViewModel,
+    medicineViewModel: MedicineViewModel,
+    orderViewModel: OrderViewModel
 ){
     val categoryMedicine by categoryViewModel.categoryMedicines.collectAsState()
+    val category by categoryViewModel.categoryData.collectAsState()
 
     LaunchedEffect(categoryId) {
+        categoryViewModel.getCategoryById(categoryId)
         categoryViewModel.getMedicineInCategory(categoryId)
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxSize().padding(vertical = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            Spacing(4.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = category.categoryName,
+                    color = CustomBlack,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            Spacing(12.dp)
+        }
         if (categoryMedicine.isNotEmpty()) {
             items(categoryMedicine) { medicine ->
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomRed,
+                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
-                            genericName = medicine.genericName,
-                            quantity = medicine.quantity.toString(),
+                            genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },

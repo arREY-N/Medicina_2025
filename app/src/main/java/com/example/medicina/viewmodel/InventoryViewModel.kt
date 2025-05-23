@@ -29,10 +29,6 @@ class InventoryViewModel: ViewModel() {
     private val _searchedMedicines = mutableStateOf<List<Medicine>>(emptyList())
     val searchedMedicines: State<List<Medicine>> = _searchedMedicines
 
-//    init {
-//        _medicines.value = repository.getAllMedicines()
-//    }
-
     fun getMedicineByName(medicineName: String) {
         val searchedMedicines = repository.getMedicinesByName(medicineName)
         searchedMedicines?.let {

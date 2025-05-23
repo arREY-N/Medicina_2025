@@ -26,6 +26,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
+import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.AccountViewModel
@@ -134,7 +135,7 @@ fun AccountScreen(
                         if(!editing){
                             editing = true
                         } else {
-                            if(confirmPassword == accountInformation.password){
+                            if(confirmPassword == accountInformation.password || UserSession.designationID == 0 || UserSession.designationID == 1){
                                 Toast.makeText(context, "Button Clicked", Toast.LENGTH_SHORT).show()
                                 accountViewModel.saveAccount()
                                 confirmPassword = ""
@@ -173,7 +174,7 @@ fun AccountScreen(
                 selectedValue = selectedDesignation,
                 dropdownOptions = designationNames,
                 modifier = Modifier.fillMaxWidth(),
-                editable = if(accountInformation.designationID != 0) false else editing
+                editable = if(UserSession.designationID != 0) false else editing
             )
         }
         item{
@@ -206,27 +207,30 @@ fun AccountScreen(
                 editable = editing
             )
         }
-        item{
-            InputField(
-                inputName = "Password",
-                inputHint = "Password",
-                inputValue = accountInformation.password,
-                visualTransformation = PasswordVisualTransformation(),
-                onValueChange = { newValue -> accountViewModel.updateData{ it.copy(password = newValue) } },
-                modifier = Modifier.fillMaxWidth(),
-                editable = editing
-            )
-        }
-        item{
-            if(editing){
+
+        if(accountInformation.id == UserSession.accountID){
+            item{
                 InputField(
-                    inputName = "Confirm Password",
-                    inputHint = "Confirm Password",
+                    inputName = "Password",
+                    inputHint = "Password",
+                    inputValue = accountInformation.password,
                     visualTransformation = PasswordVisualTransformation(),
-                    inputValue = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    modifier = Modifier.fillMaxWidth()
+                    onValueChange = { newValue -> accountViewModel.updateData{ it.copy(password = newValue) } },
+                    modifier = Modifier.fillMaxWidth(),
+                    editable = editing
                 )
+            }
+            item{
+                if(editing){
+                    InputField(
+                        inputName = "Confirm Password",
+                        inputHint = "Confirm Password",
+                        visualTransformation = PasswordVisualTransformation(),
+                        inputValue = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }

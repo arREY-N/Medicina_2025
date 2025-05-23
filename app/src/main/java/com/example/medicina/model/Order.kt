@@ -9,5 +9,6 @@ data class Order (
     val quantity: Int = -1,
     val price: Float = 0f,
     val expirationDate: LocalDate = LocalDate.of(2000, 1, 1),
-    val orderDate: LocalDate = LocalDate.of(2000, 1, 1)
+    val orderDate: LocalDate = LocalDate.of(2000, 1, 1),
+    val remainingQuantity: Int = -1
 )

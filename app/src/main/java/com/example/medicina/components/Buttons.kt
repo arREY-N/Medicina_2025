@@ -71,8 +71,8 @@ fun ButtonBox(
     inheritedModifier: Modifier = Modifier,
     onClickAction: () -> Unit,
     isClicked: Boolean = false,
-    iconSize: Dp = 40.dp,
-    fontSize: TextUnit = 12.sp,
+    iconSize: Dp = 35.dp,
+    fontSize: TextUnit = 14.sp,
     iconId: Int = 0
 ){
     Button (
@@ -119,8 +119,16 @@ fun ButtonBox(
                 }
             }
             Spacing(4.dp)
+
+            val maxLength = 9
+            val truncatedText = if (text.length > maxLength) {
+                text.substring(0, maxLength) + "..."
+            } else {
+                text
+            }
+
             Text(
-                text = text,
+                text = truncatedText,
                 fontSize = fontSize)
         }
     }

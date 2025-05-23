@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +31,7 @@ import androidx.navigation.NavController
 import com.example.medicina.model.Order
 import java.text.SimpleDateFormat
 import java.util.Locale
+import android.graphics.Color as AndroidColor
 
 @Preview(showBackground = true)
 @Composable
@@ -92,75 +94,6 @@ fun ExpandableTextSurface(
 }
 
 @Composable
-fun OrderTable(
-    modifier: Modifier,
-    tableData: List<Order>
-){
-    Surface(
-        modifier = Modifier
-            .wrapContentHeight()
-            .border(
-                1.dp,
-                CustomGray,
-                RoundedCornerShape(20.dp)
-            )
-            .then(modifier),
-        color = CustomWhite
-    ){
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                "Quantity",
-                modifier = Modifier.weight(1f).wrapContentWidth(Alignment.CenterHorizontally),
-                fontWeight = FontWeight.Bold,
-                color = CustomBlack
-            )
-            Text(
-                "Date",
-                modifier = Modifier.weight(1f).wrapContentWidth(Alignment.CenterHorizontally),
-                fontWeight = FontWeight.Bold,
-                color = CustomBlack
-            )
-            Text(
-                "Expiration",
-                modifier = Modifier.weight(1f).wrapContentWidth(Alignment.CenterHorizontally),
-                fontWeight = FontWeight.Bold,
-                color = CustomBlack
-            )
-        }
-
-        tableData.forEach { order ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    order.quantity.toString(),
-                    modifier = Modifier.weight(1f).wrapContentWidth(Alignment.CenterHorizontally),
-                    color = CustomBlack
-                )
-                Text(
-                    order.expirationDate.toString(),
-                    modifier = Modifier.weight(2f).wrapContentWidth(Alignment.CenterHorizontally),
-                    color = CustomBlack
-                )
-                Text(
-                    order.orderDate.toString(),
-                    modifier = Modifier.weight(2f).wrapContentWidth(Alignment.CenterHorizontally),
-                    color = CustomBlack
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun InfoCard(
     infoLabel: String = "",
     infoValue: Int = 0,
@@ -208,7 +141,8 @@ fun MedicineOverview(
     genericName: String = "Generic Name",
     price: String = "P0.00",
     category: String = "Category",
-    regulation: String = "Regulation"
+    regulation: String = "Regulation",
+    iconColor: String = "#000000"
 ) {
     ConstraintLayout(
         modifier = Modifier
@@ -216,9 +150,7 @@ fun MedicineOverview(
             .then(modifier)
     ) {
         val guidelines = setupColumnGuidelines()
-        val (
-            medIcon,
-            medName) = createRefs()
+        val (medIcon, medName) = createRefs()
 
         Surface(
             modifier = Modifier
@@ -229,48 +161,64 @@ fun MedicineOverview(
                     width = Dimension.fillToConstraints
                     height = Dimension.ratio("1:1")
                 },
-            color = CustomGray
+            color = Color(AndroidColor.parseColor(iconColor))
         ) {}
 
-        Column(
+        Row(
             modifier = Modifier
-                .constrainAs(medName) {
-                    top.linkTo(medIcon.top)
-                    bottom.linkTo(medIcon.bottom)
+                .constrainAs(medName){
                     start.linkTo(guidelines.c2start)
                     end.linkTo(guidelines.c4end)
+                    top.linkTo(parent.top)
+                    bottom.linkTo(parent.bottom)
                     width = Dimension.fillToConstraints
                 }
+                .fillMaxWidth()
+                .wrapContentHeight()
         ) {
-            Text(
-                brandName,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = CustomBlack)
-            Spacing(4.dp)
+            Column(modifier = Modifier.weight(2f)){
+                Text(
+                    text = brandName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = CustomBlack
+                )
 
-            Text(genericName,
-                color = CustomBlack)
+                Text(text = genericName,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Light,
+                    color = CustomBlack
+                )
+            }
 
-            Spacing(4.dp)
-            Row (
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("P $price",
-                    color = CustomBlack)
-                Text(category,
-                    color = CustomBlack)
-                Text(regulation,
-                    color = CustomBlack)
+            Column(
+                modifier = Modifier
+                    .weight(1f),
+                horizontalAlignment = Alignment.End){
+
+                if(price != "0.00"){
+                    Text(
+                        text = "P $price",
+                        fontSize = 14.sp,
+                        color = CustomBlack,
+                        fontWeight = FontWeight.Light
+                    )
+                }
+                Text(
+                    text = category,
+                    fontSize = 14.sp,
+                    color = CustomBlack,
+                    fontWeight = FontWeight.Light
+                )
+                Text(
+                    text = regulation,
+                    fontSize = 14.sp,
+                    color = CustomBlack,
+                    fontWeight = FontWeight.Light
+                )
             }
         }
     }
-}
-
-@Composable
-fun SearchBar(navController: NavController){
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -284,7 +232,7 @@ fun DatePickerInputField(
 ) {
     val datePickerState = rememberDatePickerState()
     var showDialog by remember { mutableStateOf(false) }
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
 
     if (showDialog) {
         DatePickerDialog(
@@ -326,8 +274,28 @@ fun DatePickerInputField(
     }
 }
 
-
-
+@Composable
+fun PageHeader(
+    modifier: Modifier = Modifier,
+    title: String = "Page Header"
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .then(modifier),
+        color = CustomWhite
+    ){
+        Text(
+            color = CustomGreen,
+            text = title,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
 fun Spacing(space: Dp = 8.dp){

@@ -110,7 +110,7 @@ fun ViewSupplier(
                         OrderPillText(
                             orderedItem = orderedItem?.brandName ?: "",
                             supplier = orderSupplier?.name ?: "",
-                            date = order.orderDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                            date = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
                             quantity = order.quantity,
                             price = String.format(Locale.US, "%.2f", order.price)
                         )

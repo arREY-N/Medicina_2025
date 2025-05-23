@@ -5,6 +5,7 @@ import com.example.medicina.functions.MedicineFunctions
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.update
 
 object Repository {
     // get all medicines from repository
@@ -13,10 +14,34 @@ object Repository {
     fun getAllMedicines(): StateFlow<List<Medicine>> = medicines
 
     fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.id == id }
-    fun getMedicinesByName(name: String) : List<Medicine> {
-        return medicines.value.filter{
+    fun getMedicinesByName(searchKey: String) : List<Medicine> {
+
+        val name = searchKey.trim()
+
+        val medicineList: MutableSet<List<Medicine>> = mutableSetOf()
+
+        val genericsList = generics.value.filter{
+            it.genericName.contains(name, ignoreCase = true)
+        }.map{ it.id }
+
+        val brandList = medicines.value.filter{
             it.brandName.contains(name, ignoreCase = true)
         }
+
+        val descriptionList = medicines.value.filter {
+            it.description.contains(name, ignoreCase = true)
+        }.map{ it.id }
+
+        val matchIds = descriptionList + genericsList
+
+        val filteredMedicines = medicines.value.filter {
+            it.id in matchIds
+        }
+
+        medicineList.add(brandList)
+        medicineList.add(filteredMedicines)
+
+        return medicineList.flatten()
     }
 
     fun upsertMedicine(updatedMedicine: Medicine): Int{
@@ -96,18 +121,20 @@ object Repository {
 
     fun getAccountById(id: Int): Account? = TestData.AccountRepository.find { it.id == id }
 
-    fun upsertAccount(updatedAccount: Account){
+    fun upsertAccount(updatedAccount: Account): Account{
         val index = TestData.AccountRepository.indexOfFirst { it.id == updatedAccount.id }
 
         if(index == -1){
-            val id = TestData.MedicineRepository.size + 1
+            val id = TestData.AccountRepository.size + 1
             val saveAccount = updatedAccount.copy(id = id)
             TestData.AccountRepository.add(saveAccount)
             _accounts.value = TestData.AccountRepository.toList()
+            return saveAccount
         } else {
             TestData.AccountRepository[index] = updatedAccount
             _accounts.value = TestData.AccountRepository.toList()
         }
+        return updatedAccount
     }
 
     // fun deleteAccount()
@@ -186,6 +213,20 @@ object Repository {
     private val _brandedGenerics = MutableStateFlow(TestData.BrandedGenericRepository.toList())
     val brandedGenerics: StateFlow<List<BrandedGeneric>> = _brandedGenerics
     fun getAllBrandedGenerics(): StateFlow<List<BrandedGeneric>> = brandedGenerics
+
+    fun updateBrandedGenericsForMedicine(medicineId: Int, newEntries: List<BrandedGeneric>) {
+        _brandedGenerics.update { currentList ->
+            // Remove all old entries for this medicine
+            val withoutOld = currentList.filterNot { it.medicineId == medicineId }
+
+            // Add new entries for this medicine
+            withoutOld + newEntries
+        }
+
+        println("Updated brandedGenerics: ${_brandedGenerics.value}")
+    }
+
+
 
 
 }

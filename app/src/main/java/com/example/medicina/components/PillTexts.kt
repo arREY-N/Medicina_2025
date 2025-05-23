@@ -134,7 +134,7 @@ fun InventoryPillText(
             .fillMaxWidth()
             .wrapContentHeight()
     ) {
-        Column(modifier = Modifier.weight(1f)){
+        Column(modifier = Modifier.weight(2f)){
             Text(
                 text = brandName,
                 fontSize = 18.sp,
@@ -254,7 +254,7 @@ fun OrderPillText(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(2f)
             ) {
 
                 Text(
@@ -285,7 +285,7 @@ fun OrderPillText(
                 )
 
                 Text(
-                    text = "P $price",
+                    text = "P$price",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = CustomBlack

@@ -1,5 +1,6 @@
 package com.example.medicina.components
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +28,11 @@ import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.ui.theme.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.medicina.R
 
@@ -72,7 +77,8 @@ fun NavigationBar(
                     text = "Home",
                     onClickAction = {
                         navController.navigate(Screen.Home.route){
-                            popUpTo(navController.graph.startDestinationId) {
+                            popUpTo(Screen.Home.route) {
+                                inclusive = false
                                 saveState = true
                             }
                             launchSingleTop = true
@@ -121,7 +127,7 @@ fun NavigationBar(
                             popUpTo(navController.graph.startDestinationId) {
                                 saveState = true
                             }
-                            launchSingleTop = false
+                            launchSingleTop = true
                             restoreState = true
                         }
                     },
@@ -170,7 +176,11 @@ fun TopNavigation(
     pageTitle: String = "Medicina",
     navController: NavHostController
 ) {
-    var displayMenu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val currentRoute = navController.currentBackStackEntry?.destination?.route
+    val displayMenu = currentRoute == Screen.MainMenu.route
+
+    Toast.makeText(context, currentRoute.toString(), Toast.LENGTH_SHORT).show()
 
     Surface(
         modifier = Modifier
@@ -199,18 +209,11 @@ fun TopNavigation(
             ) {
                 Button(
                     onClick = {
-                        if(!displayMenu){
-                            navController.navigate(Screen.MainMenu.route) {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                        if (!displayMenu) {
+                            navController.navigate(Screen.MainMenu.route)
                         } else {
                             navController.popBackStack()
                         }
-                        displayMenu = !displayMenu
                     },
                     contentPadding = PaddingValues(0.dp),
                     colors = ButtonDefaults.buttonColors(
@@ -341,53 +344,49 @@ fun Confirm(
     cancelOnclick: () -> Unit = { },
     confirmOnclick: () -> Unit = { }
 ){
-    ConstraintLayout(
+    Spacing(8.dp)
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .wrapContentHeight()
+            .height(80.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val guidelines = setupColumnGuidelines()
-        val (cancelButton, confirmButtom) = createRefs()
+        // Cancel button: square
         Button(
-            modifier = Modifier.constrainAs(cancelButton){
-                top.linkTo(parent.top)
-                start.linkTo(guidelines.c1start)
-                end.linkTo(guidelines.c1end)
-                width = Dimension.fillToConstraints
-                height = Dimension.ratio("1:1")
-            },
+            onClick = cancelOnclick,
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = CustomRed,
-                contentColor = CustomWhite),
-            onClick = cancelOnclick
+                contentColor = CustomWhite
+            ),
+            modifier = Modifier
+                .aspectRatio(1f)         // square: width = height
+                .fillMaxHeight()         // match Row height
         ) {
             Image(
                 painter = painterResource(id = R.drawable.trash),
-                contentDescription = "navigation icon",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Fit
+                contentDescription = "Delete",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
             )
         }
 
+        // Confirm button: fills remaining space
         Button(
-            modifier = Modifier.constrainAs(confirmButtom){
-                top.linkTo(parent.top)
-                bottom.linkTo(parent.bottom)
-                start.linkTo(guidelines.c2start)
-                end.linkTo(guidelines.c4end)
-                width = Dimension.fillToConstraints
-                height = Dimension.fillToConstraints
-            },
+            onClick = confirmOnclick,
             shape = RoundedCornerShape(20.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = CustomGreen,
-                contentColor = CustomWhite),
-            onClick = confirmOnclick
+                contentColor = CustomWhite
+            ),
+            modifier = Modifier
+                .weight(1f)              // take all remaining horizontal space
+                .fillMaxHeight()         // match Row height
         ) {
-            Text(action, fontSize = 18.sp)
+            Text(text = action, fontSize = 18.sp)
         }
     }
+
 }
 
 @Preview(showBackground = true)
@@ -395,12 +394,3 @@ fun Confirm(
 fun GreetingPreview10(){
 
 }
-
-
-//                        navController.navigate(Screen.Notifications.route) {
-//                            popUpTo(navController.graph.startDestinationId) {
-//                                saveState = true
-//                            }
-//                            launchSingleTop = true
-//                            restoreState = true
-//                        }

@@ -1,5 +1,6 @@
 package com.example.medicina.model
 
 object UserSession {
-    var designation: Designation? = null
+    var accountID: Int? = null
+    var designationID: Int? = null
 }
