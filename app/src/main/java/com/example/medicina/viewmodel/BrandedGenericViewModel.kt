@@ -6,7 +6,7 @@ import com.example.medicina.model.BrandedGeneric
 import com.example.medicina.model.Generic
 import com.example.medicina.model.Medicine
 import com.example.medicina.model.Repository
-import com.example.medicina.model.Repository.medicines
+// import com.example.medicina.model.Repository.medicines
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -109,6 +109,6 @@ class BrandedGenericViewModel: ViewModel() {
             .map { it.medicineId }
             .toSet()
 
-        _medicineNames.value = medicines.value.filter { it.id in matchingMedicineIds }
+        // _medicineNames.value = medicines.value.filter { it.id in matchingMedicineIds }
     }
 }

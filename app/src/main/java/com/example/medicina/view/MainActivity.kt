@@ -32,6 +32,7 @@ import com.example.medicina.components.Spacing
 import com.example.medicina.components.UIButton
 import com.example.medicina.ui.theme.CustomWhite
 import com.example.medicina.functions.*
+import com.example.medicina.model.Repository
 import com.example.medicina.model.UserSession
 
 class MainActivity : ComponentActivity() {
@@ -40,6 +41,14 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
         setContent {
             ComposePracticeTheme {
+                val context = LocalContext.current
+
+                LaunchedEffect(Unit) {
+                    Repository.initialize(context)
+                    Repository.initializeSampleData()
+                }
+
+
                 ScreenContainer{ LogInScreen() }
             }
         }

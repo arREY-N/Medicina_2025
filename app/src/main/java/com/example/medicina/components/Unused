@@ -1510,3 +1510,15 @@ else if (showActionBar){
                         }
                     )
                 }
+
+SQL SYNTAX
+
+medicineDao.insertMedicine(
+            Medicine(
+                brandName = "Biogesic",
+                categoryId = 1,
+                regulationId = 1,
+                price = 12f,
+                description = "Anti-inflammatory and pain relief"
+            )
+        )

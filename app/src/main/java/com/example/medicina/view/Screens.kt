@@ -767,13 +767,13 @@ fun SearchPage(
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
-                            genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
-                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
+                            genericName = brandedGenericViewModel.getGenericNamesText(medicine.id!!),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id!!).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id!!))
                     }
                 )
             }
@@ -1050,12 +1050,12 @@ fun InventoryPage(
                         InventoryPillText(
                             brandName = medicine.brandName,
                             genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
-                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id!!).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id!!))
                     }
                 )
             }
@@ -1099,7 +1099,7 @@ fun OrdersPage(
                 if (orderedItem != null) {
                     InfoPills(
                         modifier = Modifier.fillMaxWidth(),
-                        infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(orderedItem.id))),
+                        infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(orderedItem.id!!))),
                         content = {
                             OrderPillText(
                                 orderedItem = orderedItem?.brandName ?: "",

@@ -52,6 +52,7 @@ import com.example.medicina.viewmodel.MedicineViewModel
 import com.example.medicina.viewmodel.RegulationViewModel
 import java.util.Locale
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
@@ -60,6 +61,7 @@ import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 
 @Composable
@@ -247,6 +249,8 @@ fun UpsertMedicineScreen(
     brandedGenericViewModel: BrandedGenericViewModel,
     navController: NavController
 ) {
+    val coroutineScope = rememberCoroutineScope()
+
     val genericMap by brandedGenericViewModel.genericMap.collectAsState()
     val generics by brandedGenericViewModel.generics.collectAsState()
     val genericNames = generics.map { it.genericName }
@@ -270,9 +274,11 @@ fun UpsertMedicineScreen(
 
     LaunchedEffect(medicineID) {
         if(medicineID == -1){
+            println("--RESET MEDICINE--")
             medicineViewModel.reset()
             brandedGenericViewModel.reset()
         } else {
+            println("--RESET MEDICINE: $medicineID--")
             medicineID?.let {
                 medicineViewModel.getMedicineById(medicineID)
                 brandedGenericViewModel.getGenericsById(medicineID)
@@ -421,20 +427,30 @@ fun UpsertMedicineScreen(
             Confirm(
                 action = "Confirm Medicine",
                 confirmOnclick = {
-                    val id = medicineViewModel.save()
-                    medicineViewModel.getMedicineById(id)
-                    val savedMedicine = medicineViewModel.upsertMedicine
-                    brandedGenericViewModel.save(id)
-                    Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
-                    medicineViewModel.reset()
-                    navController.popBackStack()
+                    coroutineScope.launch {
+                        val id = medicineViewModel.save()
+                        medicineViewModel.getMedicineById(id)
+                        val savedMedicine = medicineViewModel.upsertMedicine
+                        brandedGenericViewModel.save(id)
+                        Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
+                        medicineViewModel.reset()
+                        navController.navigate(Screen.ViewMedicine.createRoute(id)){
+                            popUpTo(Screen.Inventory.route) {
+                                inclusive = false
+                            }
+                        }
+                    }
                 },
                 cancelOnclick = {
-                    medicineViewModel.delete()
-                    medicineViewModel.reset()
-                    navController.navigate(Screen.Inventory.route){
-                        popUpTo(Screen.Inventory.route) {
-                            inclusive = true
+                    println("DELETE CLICKED")
+                    coroutineScope.launch{
+                        println("DLETE ONGOING!")
+                        medicineViewModel.delete()
+                        medicineViewModel.reset()
+                        navController.navigate(Screen.Inventory.route){
+                            popUpTo(Screen.Inventory.route) {
+                                inclusive = true
+                            }
                         }
                     }
                 }

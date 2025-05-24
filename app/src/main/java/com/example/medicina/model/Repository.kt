@@ -1,81 +1,65 @@
 package com.example.medicina.model
 
+import android.content.Context
 import android.widget.Toast
+import com.example.medicina.database.MedicineDao
 import com.example.medicina.functions.MedicineFunctions
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 object Repository {
-    // get all medicines from repository
-    private val _medicines = MutableStateFlow(TestData.MedicineRepository.toList())
-    val medicines: StateFlow<List<Medicine>> = _medicines
-    fun getAllMedicines(): StateFlow<List<Medicine>> = medicines
 
-    fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.id == id }
-    fun getMedicinesByName(searchKey: String) : List<Medicine> {
+    private lateinit var data: Data
+    lateinit var medicineDao: MedicineDao
 
-        val name = searchKey.trim()
-
-        val medicineList: MutableSet<List<Medicine>> = mutableSetOf()
-
-        val genericsList = generics.value.filter{
-            it.genericName.contains(name, ignoreCase = true)
-        }.map{ it.id }
-
-        val brandList = medicines.value.filter{
-            it.brandName.contains(name, ignoreCase = true)
-        }
-
-        val descriptionList = medicines.value.filter {
-            it.description.contains(name, ignoreCase = true)
-        }.map{ it.id }
-
-        val matchIds = descriptionList + genericsList
-
-        val filteredMedicines = medicines.value.filter {
-            it.id in matchIds
-        }
-
-        medicineList.add(brandList)
-        medicineList.add(filteredMedicines)
-
-        return medicineList.flatten()
+    fun initialize(context: Context){
+        data = Data(context)
+        medicineDao = data.db.medicineDao()
     }
 
-    fun upsertMedicine(updatedMedicine: Medicine): Int{
-        val index = TestData.MedicineRepository.indexOfFirst { it.id == updatedMedicine.id }
-
-        if(index == -1){
-            val id = TestData.MedicineRepository.size
-            val saveMedicine = updatedMedicine.copy(id = id)
-            TestData.MedicineRepository.add(saveMedicine)
-            _medicines.value = TestData.MedicineRepository.toList()
-            return id
+    suspend fun clearAllData(){
+        withContext(Dispatchers.IO){
+            data.db.clearAllTables()
         }
-
-        TestData.MedicineRepository[index] = updatedMedicine
-        _medicines.value = TestData.MedicineRepository.toList()
-        return index
     }
 
-    fun deleteMedicine(medicineId: Int){
-        TestData.MedicineRepository.removeIf { it.id == medicineId }
-        _medicines.value = TestData.MedicineRepository.toList()
+    suspend fun initializeSampleData(){
+
+    }
+
+    fun getAllMedicines(): Flow<List<Medicine>> = medicineDao.getAllMedicines()
+
+    suspend fun upsertMedicine(updatedMedicine: Medicine): Long {
+        return if (updatedMedicine.id == null) {
+            medicineDao.insertMedicine(updatedMedicine)
+        } else {
+            medicineDao.updateMedicine(updatedMedicine)
+            updatedMedicine.id.toLong()
+        }
+    }
+
+    suspend fun deleteMedicine(medicineId: Int){
+        medicineDao.deleteMedicine(medicineId)
     }
 
     fun getMedicinesByCategory(categoryId: Int) : List<Medicine> {
-        val medicines = getAllMedicines()
-        val categoryMedicine: MutableList<Medicine> = mutableListOf()
-        medicines.value.forEach { medicine ->
-            if(medicine.categoryId == categoryId){
-                categoryMedicine.add(medicine)
-            }
-        }
-        return categoryMedicine
+//        val medicines = getAllMedicines()
+//        val categoryMedicine: MutableList<Medicine> = mutableListOf()
+//        medicines.value.forEach { medicine ->
+//            if(medicine.categoryId == categoryId){
+//                categoryMedicine.add(medicine)
+//            }
+//        }
+//        return categoryMedicine
+        return emptyList()
     }
-
 
     // CATEGORIES
 
@@ -225,8 +209,4 @@ object Repository {
 
         println("Updated brandedGenerics: ${_brandedGenerics.value}")
     }
-
-
-
-
 }

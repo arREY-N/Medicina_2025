@@ -16,9 +16,15 @@ class InventoryViewModel: ViewModel() {
     private val repository = Repository
 
     // private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
-    val medicines: StateFlow<List<Medicine>> = repository.getAllMedicines()
+    private val _medicines: StateFlow<List<Medicine>> = repository.getAllMedicines().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val medicineMap: StateFlow<Map<Int, Medicine>> = medicines
+    val medicines: StateFlow<List<Medicine>> = _medicines
+
+    val medicineMap: StateFlow<Map<Int?, Medicine>> = medicines
         .map { list -> list.associateBy { med -> med.id } }
         .stateIn(
             scope = viewModelScope,
@@ -30,9 +36,9 @@ class InventoryViewModel: ViewModel() {
     val searchedMedicines: State<List<Medicine>> = _searchedMedicines
 
     fun getMedicineByName(medicineName: String) {
-        val searchedMedicines = repository.getMedicinesByName(medicineName)
-        searchedMedicines?.let {
-            _searchedMedicines.value = it
-        }
+//        val searchedMedicines = repository.getMedicinesByName(medicineName)
+//        searchedMedicines?.let {
+//            _searchedMedicines.value = it
+//        }
     }
 }

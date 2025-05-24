@@ -22,7 +22,7 @@ class SearchViewModel: ViewModel() {
     private val _searchResults = MutableStateFlow<List<Medicine>>(emptyList())
     val searchResults: StateFlow<List<Medicine>> = _searchResults
 
-    val resultsMap: StateFlow<Map<Int, Medicine>> = _searchResults
+    val resultsMap: StateFlow<Map<Int?, Medicine>> = _searchResults
         .map { list -> list.associateBy { it.id } }
         .stateIn(
             scope = viewModelScope,
@@ -36,6 +36,37 @@ class SearchViewModel: ViewModel() {
 
     fun performSearch(){
         _searchResults.value = emptyList()
-        _searchResults.value = repository.getMedicinesByName(searchItem.value)
+        _searchResults.value = getMedicinesByName(searchItem.value)
+    }
+
+    fun getMedicinesByName(searchKey: String) : List<Medicine> {
+
+//        val name = searchKey.trim()
+//
+//        val medicineList: MutableSet<List<Medicine>> = mutableSetOf()
+//
+//        val genericsList = generics.value.filter{
+//            it.genericName.contains(name, ignoreCase = true)
+//        }.map{ it.id }
+//
+//        val brandList = medicines.value.filter{
+//            it.brandName.contains(name, ignoreCase = true)
+//        }
+//
+//        val descriptionList = medicines.value.filter {
+//            it.description.contains(name, ignoreCase = true)
+//        }.map{ it.id }
+//
+//        val matchIds = descriptionList + genericsList
+//
+//        val filteredMedicines = medicines.value.filter {
+//            it.id in matchIds
+//        }
+//
+//        medicineList.add(brandList)
+//        medicineList.add(filteredMedicines)
+//
+//        return medicineList.flatten()
+        return emptyList()
     }
 }

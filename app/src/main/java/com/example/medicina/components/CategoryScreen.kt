@@ -185,12 +185,12 @@ fun CategoryMedicine(
                         InventoryPillText(
                             brandName = medicine.brandName,
                             genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
-                            quantity = orderViewModel.getTotalQuantity(medicine.id).toString(),
+                            quantity = orderViewModel.getTotalQuantity(medicine.id!!).toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id!!))
                     }
                 )
             }
