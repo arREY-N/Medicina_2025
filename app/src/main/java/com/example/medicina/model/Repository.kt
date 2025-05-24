@@ -2,7 +2,7 @@ package com.example.medicina.model
 
 import android.content.Context
 import android.widget.Toast
-import com.example.medicina.database.MedicineDao
+import com.example.medicina.database.*
 import com.example.medicina.functions.MedicineFunctions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -13,15 +13,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.map
 
 object Repository {
 
     private lateinit var data: Data
     lateinit var medicineDao: MedicineDao
+    lateinit var categoryDao: CategoryDao
+    lateinit var medicineCategoryDao: MedicineCategoryDao
 
     fun initialize(context: Context){
         data = Data(context)
         medicineDao = data.db.medicineDao()
+        categoryDao = data.db.categoryDao()
+        medicineCategoryDao = data.db.medicineCategoryDao()
     }
 
     suspend fun clearAllData(){
@@ -49,46 +54,46 @@ object Repository {
         medicineDao.deleteMedicine(medicineId)
     }
 
-    fun getMedicinesByCategory(categoryId: Int) : List<Medicine> {
-//        val medicines = getAllMedicines()
-//        val categoryMedicine: MutableList<Medicine> = mutableListOf()
-//        medicines.value.forEach { medicine ->
-//            if(medicine.categoryId == categoryId){
-//                categoryMedicine.add(medicine)
-//            }
-//        }
-//        return categoryMedicine
-        return emptyList()
+    fun getAllMedicineCategory(): Flow<List<MedicineCategory>> = medicineCategoryDao.getAllMedicineCategories()
+
+    suspend fun upsertMedicineCategory(medicineId: Int, updatedMedicineCategory: List<MedicineCategory>) {
+        medicineCategoryDao.replaceCategoriesForMedicine(medicineId, updatedMedicineCategory)
     }
 
     // CATEGORIES
 
-
-    private val _categories = MutableStateFlow(TestData.CategoryRepository.toList())
-    val categories: StateFlow<List<Category>> = _categories
-    fun getAllCategories(): StateFlow<List<Category>> = categories
+    fun getAllCategories(): Flow<List<Category>> = categoryDao.getAllCategories()
 
     fun getCategoryById(id: Int): Category? = TestData.CategoryRepository.find { it.id == id }
 
-    fun upsertCategory(updatedCategory: Category): Int{
-        val index = TestData.CategoryRepository.indexOfFirst { it.id == updatedCategory.id }
-
-        if(index == -1){
-            val id = TestData.CategoryRepository.size + 1
-            val saveCategory = updatedCategory.copy(id = id)
-            TestData.CategoryRepository.add(saveCategory)
-            _categories.value = TestData.CategoryRepository.toList()
-            return id
+    suspend fun upsertCategory(updatedCategory: Category): Long {
+        return if (updatedCategory.id == null) {
+            categoryDao.insertCategory(updatedCategory)
         } else {
-            TestData.CategoryRepository[index] = updatedCategory
-            _categories.value = TestData.CategoryRepository.toList()
+            categoryDao.updateCategory(updatedCategory)
+            updatedCategory.id.toLong()
         }
-        return index
     }
 
-    fun deleteCategory(categoryId: Int){
-        TestData.CategoryRepository.removeIf { it.id == categoryId }
-        _categories.value = TestData.CategoryRepository.toList()
+    fun getAllMedicineCategories(): Flow<List<MedicineCategory>> = medicineCategoryDao.getAllMedicineCategories()
+
+//        val index = TestData.CategoryRepository.indexOfFirst { it.id == updatedCategory.id }
+//
+//        if(index == -1){
+//            val id = TestData.CategoryRepository.size + 1
+//            val saveCategory = updatedCategory.copy(id = id)
+//            TestData.CategoryRepository.add(saveCategory)
+//            _categories.value = TestData.CategoryRepository.toList()
+//            return id
+//        } else {
+//            TestData.CategoryRepository[index] = updatedCategory
+//            _categories.value = TestData.CategoryRepository.toList()
+//        }
+//        return index
+//    }
+
+    suspend fun deleteCategory(categoryId: Int){
+        categoryDao.deleteCategory(categoryId)
     }
 
 

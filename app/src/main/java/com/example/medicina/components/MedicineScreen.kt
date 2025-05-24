@@ -59,10 +59,12 @@ import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.ui.theme.CustomWhite
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.InventoryViewModel
+import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun ReadMedicine(
@@ -73,11 +75,12 @@ fun ReadMedicine(
     orderViewModel: OrderViewModel,
     inventoryViewModel: InventoryViewModel,
     supplierViewModel: SupplierViewModel,
-    brandedGenericViewModel: BrandedGenericViewModel
+    brandedGenericViewModel: BrandedGenericViewModel,
+    medicineCategoryViewModel: MedicineCategoryViewModel,
 ) {
 
     val medicineData by medicineViewModel.medicineData.collectAsState()
-    val medicineCategory by medicineViewModel.medicineCategory.collectAsState()
+    val medicineCategory by medicineCategoryViewModel.categoryNames.collectAsState()
     val medicineRegulation by medicineViewModel.medicineRegulation.collectAsState()
     val medicines by inventoryViewModel.medicineMap.collectAsState()
     val suppliers by supplierViewModel.supplierMap.collectAsState()
@@ -86,10 +89,10 @@ fun ReadMedicine(
         brandedGenericViewModel.reset()
         medicineViewModel.getMedicineById(medicineId)
         brandedGenericViewModel.getGenericsById(medicineId)
+        medicineCategoryViewModel.getCategoriesById(medicineId)
     }
 
     LaunchedEffect(medicineData) {
-        medicineViewModel.getMedicineCategory(medicineData.categoryId)
         medicineViewModel.getMedicineRegulation(medicineData.regulationId)
     }
 
@@ -104,7 +107,7 @@ fun ReadMedicine(
                 brandName = medicineData.brandName,
                 genericName = brandedGenericViewModel.getGenericNamesText(medicineId),
                 price = String.format(Locale.US, "%.2f", medicineData.price),
-                category = medicineCategory.categoryName,
+                category = medicineCategoryViewModel.getCategoryNamesText(medicineId),
                 regulation = medicineRegulation.regulation
             )
         }
@@ -205,7 +208,7 @@ fun ReadMedicine(
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(medicineCategory.id))),
+                    infoColor = CustomGreen, // Color(medicineViewModel.getMedicineColor(medicineCategory.get(0).id ?: -1).toColorInt()),
                     content = {
                         OrderPillText(
                             orderedItem = orderedItem?.brandName ?: "",
@@ -247,7 +250,8 @@ fun UpsertMedicineScreen(
     regulationViewModel: RegulationViewModel,
     categoryViewModel: CategoryViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
-    navController: NavController
+    medicineCategoryViewModel: MedicineCategoryViewModel,
+    navController: NavController,
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -260,6 +264,8 @@ fun UpsertMedicineScreen(
     val categories by categoryViewModel.categories.collectAsState()
     val categoryMap by categoryViewModel.categoryMap.collectAsState()
     val categoryNames = categories.map { it.categoryName }
+
+    val categoryList by medicineCategoryViewModel.upsertMedicineCategory.collectAsState()
 
     val regulations by regulationViewModel.regulations.collectAsState()
     val regulationMap by regulationViewModel.regulationMap.collectAsState()
@@ -282,13 +288,13 @@ fun UpsertMedicineScreen(
             medicineID?.let {
                 medicineViewModel.getMedicineById(medicineID)
                 brandedGenericViewModel.getGenericsById(medicineID)
+                medicineCategoryViewModel.getCategoriesById(medicineID)
             }
         }
     }
 
     LaunchedEffect(upsertMedicine) {
         if(upsertMedicine.id != -1){
-            selectedCategory = categoryMap.values.firstOrNull { it.id == upsertMedicine.categoryId }?.categoryName?: ""
             selectedRegulation = regulationMap.values.firstOrNull { it.id == upsertMedicine.regulationId }?.regulation?: ""
         }
     }
@@ -357,6 +363,53 @@ fun UpsertMedicineScreen(
         }
 
         item {
+            DropdownInputField(
+                inputName = "Category/ies",
+                inputHint = "Add Category",
+                selectedValue = "",
+                onValueChange = { newSelection ->
+                    selectedItem = newSelection
+
+                    val selectedCategory =
+                        categoryMap.values.firstOrNull { it.categoryName == newSelection }
+                    selectedCategory?.let {
+                        medicineCategoryViewModel.updateCategories(selectedCategory)
+                    }
+                },
+                dropdownOptions = categoryNames,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (categoryList.isNotEmpty()) {
+                Spacing(8.dp)
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(categoryList) { category ->
+                        UIButton(
+                            text = category.categoryName,
+                            modifier = Modifier
+                                .wrapContentWidth()
+                                .height(50.dp),
+                            onClickAction = {
+                                medicineCategoryViewModel.removeCategory(category)
+                            },
+                            isCTA = false
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    text = "No categories selected",
+                    modifier = Modifier.padding(start = 8.dp, top = 8.dp),
+                    color = CustomGray
+                )
+            }
+        }
+
+        item {
             InputField(
                 inputName = "Price",
                 inputHint = "Enter price",
@@ -389,24 +442,6 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            DropdownInputField(
-                inputName = "Category",
-                inputHint = "Select category",
-                selectedValue = selectedCategory,
-                onValueChange = { newSelection ->
-                    selectedCategory = newSelection
-
-                    val selectedId = categoryMap.values.firstOrNull { it.categoryName == newSelection }?.id
-                    selectedId?.let {
-                        medicineViewModel.updateData { it.copy(categoryId = selectedId) }
-                    } },
-                dropdownOptions = categoryNames,
-                modifier = Modifier.fillMaxWidth(),
-                width = Dimension.fillToConstraints
-            )
-        }
-
-        item {
             InputField(
                 inputName = "Description",
                 inputHint = "Enter description",
@@ -432,6 +467,7 @@ fun UpsertMedicineScreen(
                         medicineViewModel.getMedicineById(id)
                         val savedMedicine = medicineViewModel.upsertMedicine
                         brandedGenericViewModel.save(id)
+                        medicineCategoryViewModel.save(id)
                         Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
                         medicineViewModel.reset()
                         navController.navigate(Screen.ViewMedicine.createRoute(id)){

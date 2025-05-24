@@ -110,6 +110,7 @@ import com.example.medicina.components.OrderPillText
 import com.example.medicina.components.Spacing
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.GenericViewModel
+import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import com.example.medicina.viewmodel.ScreenViewModel
 import kotlinx.coroutines.delay
 import android.graphics.Color as AndroidColor
@@ -161,6 +162,7 @@ fun MainScreen(){
     val accountViewModel: AccountViewModel = viewModel()
     val genericViewModel: GenericViewModel = viewModel()
     val brandedGenericViewModel: BrandedGenericViewModel = viewModel()
+    val medicineCategoryViewModel: MedicineCategoryViewModel = viewModel()
 
     val (isHome, pageTitle) = when (currentRoute) {
         Screen.Home.route -> true to "Medicina"
@@ -381,6 +383,7 @@ fun MainScreen(){
                         regulationViewModel,
                         categoryViewModel,
                         brandedGenericViewModel,
+                        medicineCategoryViewModel,
                         navController
                     )
                 }
@@ -403,7 +406,8 @@ fun MainScreen(){
                         orderViewModel,
                         inventoryViewModel,
                         supplierViewModel,
-                        brandedGenericViewModel
+                        brandedGenericViewModel,
+                        medicineCategoryViewModel
                     )
                 }
             }
@@ -428,7 +432,7 @@ fun MainScreen(){
 
             // categories screen
             composable(Screen.Categories.route) {
-                ScreenContainer{ CategoriesScreen(navController, categoryViewModel) }
+                ScreenContainer{ CategoriesScreen(navController, categoryViewModel, medicineCategoryViewModel) }
             }
             composable(
                 route = Screen.UpsertCategory.route,
@@ -439,7 +443,7 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val categoryID = backStackEntry.arguments?.getInt("categoryID") ?: 0
 
-                ScreenContainer{ UpsertCategoryScreen(categoryID, categoryViewModel) }
+                ScreenContainer{ UpsertCategoryScreen(categoryID, categoryViewModel, navController) }
             }
             composable(
                 route = Screen.ViewCategory.route,
@@ -457,7 +461,8 @@ fun MainScreen(){
                         categoryViewModel,
                         brandedGenericViewModel,
                         medicineViewModel,
-                        orderViewModel
+                        orderViewModel,
+                        medicineCategoryViewModel
                     )
                 }
             }
@@ -615,13 +620,16 @@ fun Home(
                         ButtonBox(
                             text = category.categoryName,
                             onClickAction = {
-                                navController.navigate(Screen.ViewCategory.createRoute(category.id)) {
-                                    popUpTo(Screen.Home.route) {
-                                        inclusive = false
-                                        saveState = true
+                                val id = category.id
+                                id?.let{
+                                    navController.navigate(Screen.ViewCategory.createRoute(category.id)) {
+                                        popUpTo(Screen.Home.route) {
+                                            inclusive = false
+                                            saveState = true
+                                        }
+                                        launchSingleTop = false
+                                        restoreState = true
                                     }
-                                    launchSingleTop = false
-                                    restoreState = true
                                 }
                             },
                             inheritedModifier = Modifier
@@ -1045,7 +1053,7 @@ fun InventoryPage(
             items(medicines) { medicine ->
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
+                    infoColor = CustomGreen, // Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,

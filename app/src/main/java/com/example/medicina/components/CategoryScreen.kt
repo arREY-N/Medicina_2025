@@ -1,5 +1,6 @@
 package com.example.medicina.components
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,9 +15,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,15 +29,20 @@ import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.CategoryViewModel
 import com.example.medicina.viewmodel.GenericViewModel
+import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
 import com.example.medicina.viewmodel.OrderViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @Composable
 fun UpsertCategoryScreen(
     categoryID: Int? = null,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel,
+    navController: NavController
 ){
+    val coroutineScope = rememberCoroutineScope()
+
     val upsertCategory by categoryViewModel.upsertCategory.collectAsState()
 
     LaunchedEffect (categoryID) {
@@ -86,14 +94,41 @@ fun UpsertCategoryScreen(
                     .fillMaxWidth()
             )
         }
-    }
 
+        item{
+            val context = LocalContext.current
+            Confirm(
+                action = "Confirm Category",
+                confirmOnclick = {
+                    coroutineScope.launch {
+                        val id = categoryViewModel.save()
+                        categoryViewModel.getCategoryById(id)
+                        val savedCategory = categoryViewModel.upsertCategory
+                        Toast.makeText(context, "Medicine saved: ${savedCategory.value.categoryName}", Toast.LENGTH_SHORT).show()
+                        categoryViewModel.reset()
+                        navController.popBackStack()
+                    }
+                },
+                cancelOnclick = {
+                    println("DELETE CLICKED")
+                    coroutineScope.launch{
+                        println("DLETE ONGOING!")
+                        categoryViewModel.delete()
+                        categoryViewModel.reset()
+                        navController.popBackStack()
+                    }
+                }
+            )
+            Spacing(80.dp)
+        }
+    }
 }
 
 @Composable
 fun CategoriesScreen(
     navController: NavController,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel,
+    medicineCategoryViewModel: MedicineCategoryViewModel
 ){
     val categories by categoryViewModel.categories.collectAsState()
 
@@ -127,12 +162,12 @@ fun CategoriesScreen(
                     content = {
                         CategoryPillText(
                             categoryName = category.categoryName,
-                            medicineNumber = categoryViewModel.getMedicineNumber(category.id),
+                            medicineNumber = medicineCategoryViewModel.getCategorySize(category.id ?: -1),
                             description = category.description
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewCategory.createRoute(category.id))
+                        navController.navigate(Screen.ViewCategory.createRoute(category.id ?: -1))
                     }
                 )
             }
@@ -147,14 +182,15 @@ fun CategoryMedicine(
     categoryViewModel: CategoryViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
     medicineViewModel: MedicineViewModel,
-    orderViewModel: OrderViewModel
+    orderViewModel: OrderViewModel,
+    medicineCategoryViewModel: MedicineCategoryViewModel
 ){
-    val categoryMedicine by categoryViewModel.categoryMedicines.collectAsState()
+    val categoryMedicine by medicineCategoryViewModel.medicineNames.collectAsState()
     val category by categoryViewModel.categoryData.collectAsState()
 
     LaunchedEffect(categoryId) {
         categoryViewModel.getCategoryById(categoryId)
-        categoryViewModel.getMedicineInCategory(categoryId)
+        medicineCategoryViewModel.getMedicinesByCategory(categoryId)
     }
 
     LazyColumn(
@@ -180,7 +216,7 @@ fun CategoryMedicine(
             items(categoryMedicine) { medicine ->
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
+                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(categoryId))),
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,

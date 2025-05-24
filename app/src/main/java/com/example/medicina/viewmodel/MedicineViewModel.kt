@@ -34,12 +34,8 @@ class MedicineViewModel : ViewModel() {
     private val _upsertMedicine = MutableStateFlow(Medicine())
     val upsertMedicine: StateFlow<Medicine> = _upsertMedicine
 
-    private val _medicineCategory = MutableStateFlow(Category())
-    val medicineCategory: StateFlow<Category> = _medicineCategory
-
     private val _medicineRegulation = MutableStateFlow(Regulation())
     val medicineRegulation: StateFlow<Regulation> = _medicineRegulation
-
 
     suspend fun save(): Int {
         val id = repository.upsertMedicine(upsertMedicine.value)
@@ -58,7 +54,6 @@ class MedicineViewModel : ViewModel() {
     fun reset(){
         _medicineData.value = Medicine()
         _upsertMedicine.value = Medicine()
-        _medicineCategory.value = Category()
         _medicineRegulation.value = Regulation()
     }
 
@@ -72,13 +67,6 @@ class MedicineViewModel : ViewModel() {
                     _medicineData.value = it
                     _upsertMedicine.value = it.copy()
                 }
-        }
-    }
-
-    fun getMedicineCategory(categoryId: Int){
-        val category = repository.getCategoryById(categoryId)
-        category?.let {
-            _medicineCategory.value = it
         }
     }
 

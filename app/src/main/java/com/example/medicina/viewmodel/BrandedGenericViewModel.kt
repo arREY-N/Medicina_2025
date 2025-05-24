@@ -17,11 +17,23 @@ import kotlinx.coroutines.flow.update
 class BrandedGenericViewModel: ViewModel() {
     private val repository = Repository
 
-    val brandedGenerics = repository.getAllBrandedGenerics()
+    val brandedGenerics = repository.getAllBrandedGenerics().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val generics: StateFlow<List<Generic>> = repository.getAllGenerics()
+    val medicines = repository.getAllMedicines().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val medicines = repository.getAllMedicines()
+    val generics: StateFlow<List<Generic>> = repository.getAllGenerics().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
     val genericMap: StateFlow<Map<Int, Generic>> = generics
         .map { list -> list.associateBy { gen -> gen.id } }
@@ -30,12 +42,6 @@ class BrandedGenericViewModel: ViewModel() {
             started = SharingStarted.Eagerly,
             initialValue = emptyMap()
         )
-
-    private val _genericNames = MutableStateFlow<List<Generic>>(emptyList())
-    val genericNames: StateFlow<List<Generic>> = _genericNames
-
-    private val _medicineNames = MutableStateFlow<List<Medicine>>(emptyList())
-    val medicineNames: StateFlow<List<Medicine>> = _medicineNames
 
     fun getGenericsById(medicineId: Int){
         val matchingGenericIds = brandedGenerics.value
@@ -46,6 +52,9 @@ class BrandedGenericViewModel: ViewModel() {
         _genericNames.value = generics.value.filter { it.id in matchingGenericIds }
         _upsertGenericNames.value = _genericNames.value
     }
+
+    private val _genericNames = MutableStateFlow<List<Generic>>(emptyList())
+    val genericNames: StateFlow<List<Generic>> = _genericNames
 
     // editable copy of the list generic names
     private val _upsertGenericNames = MutableStateFlow<List<Generic>>(emptyList())
@@ -100,15 +109,5 @@ class BrandedGenericViewModel: ViewModel() {
     fun reset(){
         _genericNames.value = emptyList()
         _upsertGenericNames.value = emptyList()
-    }
-
-
-    fun getMedicinesById(genericId: Int){
-        val matchingMedicineIds = brandedGenerics.value
-            .filter { it.genericId == genericId }
-            .map { it.medicineId }
-            .toSet()
-
-        // _medicineNames.value = medicines.value.filter { it.id in matchingMedicineIds }
     }
 }

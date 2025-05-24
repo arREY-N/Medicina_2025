@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 data class Medicine (
     @PrimaryKey (autoGenerate = true) val id: Int? = null,
     val brandName: String = "",
-    val categoryId: Int = -1,
     val regulationId: Int = -1,
     val price: Float = 0f,
     val description: String = ""

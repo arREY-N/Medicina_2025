@@ -8,13 +8,18 @@ import com.example.medicina.model.Medicine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 class CategoryViewModel: ViewModel() {
     private val repository = Repository
 
-    val categories = repository.getAllCategories()
+    val categories = repository.getAllCategories().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val categoryMap: StateFlow<Map<Int, Category>> = categories
+    val categoryMap: StateFlow<Map<Int?, Category>> = categories
         .map { list -> list.associateBy { it.id } }
         .stateIn(
             scope = viewModelScope,
@@ -40,34 +45,30 @@ class CategoryViewModel: ViewModel() {
         _upsertCategory.value = transform(_upsertCategory.value)
     }
 
-    fun save() {
-        repository.upsertCategory(upsertCategory.value)
+    suspend fun save(): Int {
+        val id = repository.upsertCategory(upsertCategory.value)
         _categoryData.value = _upsertCategory.value
         reset()
+        return id.toInt()
     }
 
-    fun delete() {
-        repository.deleteCategory(categoryData.value.id)
+    suspend fun delete() {
+        val id = categoryData.value.id
+        id?.let{
+            repository.deleteCategory(id)
+        }
     }
 
     fun getCategoryById(categoryId: Int){
-        val category = repository.getCategoryById(categoryId)
-        category?.let {
-            _categoryData.value = it
-            _upsertCategory.value = it.copy()
+        viewModelScope.launch {
+            Repository.getAllCategories()
+                .map { list -> list.find { it.id == categoryId } }
+                .filterNotNull()
+                .first() // suspends until non-null found
+                .let {
+                    _categoryData.value = it
+                    _upsertCategory.value = it.copy()
+                }
         }
     }
-
-    fun getMedicineInCategory(categoryId: Int){
-        val categoryMedicine = repository.getMedicinesByCategory(categoryId)
-        categoryMedicine.let {
-            _categoryMedicines.value = it
-        }
-    }
-
-    fun getMedicineNumber(categoryId: Int): Int{
-        val categoryMedicine = repository.getMedicinesByCategory(categoryId)
-        return categoryMedicine.size
-    }
-
 }
