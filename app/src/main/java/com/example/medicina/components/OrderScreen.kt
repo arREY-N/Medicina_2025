@@ -56,7 +56,7 @@ fun UpsertOrderScreen(
     }
 
     LaunchedEffect(upsertOrder) {
-        selectedMedicine = medicineMap.values.firstOrNull { it.id == upsertOrder.medicineId }?.brandName ?: ""
+        selectedMedicine = medicineMap.values.firstOrNull { it.medicineId == upsertOrder.medicineId }?.brandName ?: ""
         selectedSupplier = supplierMap.values.firstOrNull { it.id == upsertOrder.supplierId }?.name ?: ""
     }
 
@@ -71,7 +71,7 @@ fun UpsertOrderScreen(
                 onValueChange = { newSelection ->
                     selectedMedicine = newSelection
 
-                    val selectedId = medicineMap.values.firstOrNull { it.brandName == newSelection }?.id
+                    val selectedId = medicineMap.values.firstOrNull { it.brandName == newSelection }?.medicineId
                     selectedId?.let {
                         orderViewModel.updateData { it.copy(medicineId = selectedId) }
                     }

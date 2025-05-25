@@ -3,7 +3,7 @@ package com.example.medicina.model
 import com.example.medicina.functions.MedicineFunctions
 
 class Repository {
-    fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.id == id }
+    fun getMedicineById(id: Int): Medicine? = TestData.MedicineRepository.find { it.medicineId == id }
     fun getAllMedicines(): List<Medicine> = TestData.MedicineRepository
 
     fun getMedicinesByName(name: String) : List<Medicine> {
@@ -11,7 +11,7 @@ class Repository {
     }
 
     fun deleteMedicine(medicineId: Int){
-        TestData.MedicineRepository.removeIf { it.id == medicineId }
+        TestData.MedicineRepository.removeIf { it.medicineId == medicineId }
     }
 
 
@@ -28,11 +28,11 @@ class Repository {
     }
 
     fun updateMedicine(updatedMedicine: Medicine){
-        val index = TestData.MedicineRepository.indexOfFirst { it.id == updatedMedicine.id }
+        val index = TestData.MedicineRepository.indexOfFirst { it.medicineId == updatedMedicine.medicineId }
 
         if(index == -1){
             val id = TestData.MedicineRepository.size + 1
-            val saveMedicine = updatedMedicine.copy(id = id)
+            val saveMedicine = updatedMedicine.copy(medicineId = id)
             TestData.MedicineRepository.add(saveMedicine)
         } else {
             TestData.MedicineRepository[index] = updatedMedicine

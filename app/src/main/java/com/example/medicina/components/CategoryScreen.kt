@@ -149,7 +149,7 @@ fun CategoryMedicine(
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.medicineId))
                     }
                 )
             }

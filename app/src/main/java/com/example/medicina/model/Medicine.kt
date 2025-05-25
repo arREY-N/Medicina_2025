@@ -1,7 +1,7 @@
 package com.example.medicina.model
 
 data class Medicine (
-    val id: Int = -1,
+    val medicineId: Int = -1,
     val brandName: String = "",
     val genericName: String = "",
     val categoryId: Int = -1,

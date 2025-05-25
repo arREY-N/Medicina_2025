@@ -735,7 +735,7 @@ fun SearchPage(
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.medicineId))
                     }
                 )
             }
@@ -1003,7 +1003,7 @@ fun InventoryPage(
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.id))
+                        navController.navigate(Screen.ViewMedicine.createRoute(medicine.medicineId))
                     }
                 )
             }

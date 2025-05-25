@@ -31,7 +31,7 @@ class MedicineViewModel : ViewModel() {
     }
 
     fun delete() {
-        repository.deleteMedicine(upsertMedicine.value.id)
+        repository.deleteMedicine(upsertMedicine.value.medicineId)
     }
 
     fun reset(){

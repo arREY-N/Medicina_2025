@@ -18,7 +18,7 @@ class SearchViewModel: ViewModel() {
     val searchResults: StateFlow<List<Medicine>> = _searchResults
 
     val resultsMap: StateFlow<Map<Int, Medicine>> = _searchResults
-        .map { list -> list.associateBy { it.id } }
+        .map { list -> list.associateBy { it.medicineId } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,

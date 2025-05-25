@@ -71,6 +71,8 @@ fun LogInScreen(){
             var username by rememberSaveable { mutableStateOf("") }
             var password by rememberSaveable { mutableStateOf("") }
 
+            val coroutineScope = rememberCoroutineScope()
+
             val (
                 usernameField,
                 passwordField,

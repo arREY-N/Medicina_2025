@@ -19,7 +19,7 @@ class InventoryViewModel: ViewModel() {
     val medicines: StateFlow<List<Medicine>> = _medicines
 
     val medicineMap: StateFlow<Map<Int, Medicine>> = _medicines
-        .map { list -> list.associateBy { it.id } }
+        .map { list -> list.associateBy { it.medicineId } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,

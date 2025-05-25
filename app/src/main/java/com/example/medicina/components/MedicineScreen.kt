@@ -206,7 +206,7 @@ fun UpsertMedicineScreen(
     }
 
     LaunchedEffect(upsertMedicine) {
-        if(upsertMedicine.id != -1){
+        if(upsertMedicine.medicineId != -1){
             selectedCategory = categoryMap.values.firstOrNull { it.id == upsertMedicine.categoryId }?.categoryName?: ""
             selectedRegulation = regulationMap.values.firstOrNull { it.id == upsertMedicine.regulationId }?.regulation?: ""
         }
