@@ -62,7 +62,7 @@ fun ViewSuppliers(
                     content = {
                         SupplierPillText(
                             supplierName = supplier.name,
-                            orders = orderViewModel.getOrdersBySupplierId(supplier.id)
+                            orders = orderViewModel.getOrdersBySupplierId(supplier.id ?: -1)
                         )
                     },
                     onClickAction = {

@@ -106,8 +106,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import com.example.medicina.components.CategoryPillText
 import com.example.medicina.components.OrderPillText
+import com.example.medicina.components.ReadGeneric
 import com.example.medicina.components.Spacing
+import com.example.medicina.components.UpsertGenericScreen
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.GenericViewModel
 import com.example.medicina.viewmodel.MedicineCategoryViewModel
@@ -384,6 +387,7 @@ fun MainScreen(){
                         categoryViewModel,
                         brandedGenericViewModel,
                         medicineCategoryViewModel,
+                        genericViewModel,
                         navController
                     )
                 }
@@ -492,6 +496,52 @@ fun MainScreen(){
                 val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: -1
 
                 ScreenContainer{ ViewSupplier(supplierID, navController, orderViewModel, inventoryViewModel, supplierViewModel) }
+            }
+
+            composable(Screen.Generics.route){
+                ScreenContainer{
+                    GenericsScreen(navController, genericViewModel, brandedGenericViewModel)
+                }
+            }
+
+            composable(
+                route = Screen.UpsertGeneric.route,
+                arguments = listOf(navArgument("genericID") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                })
+            ) { backStackEntry ->
+                val genericID = backStackEntry.arguments?.getInt("genericID") ?: -1
+
+                ScreenContainer {
+                    UpsertGenericScreen(
+                        genericID,
+                        genericViewModel,
+                        navController
+                    )
+                }
+            }
+
+            composable(
+                route = Screen.ViewGeneric.route,
+                arguments = listOf(navArgument("genericID") {
+                    type = NavType.IntType
+                    defaultValue = 0
+                })
+            ) { backStackEntry ->
+                val genericID = backStackEntry.arguments?.getInt("genericID") ?: -1
+
+                ScreenContainer{
+                    ReadGeneric(
+                        genericID,
+                        navController,
+                        categoryViewModel,
+                        brandedGenericViewModel,
+                        medicineViewModel,
+                        orderViewModel,
+                        medicineCategoryViewModel,
+                        genericViewModel)
+                }
             }
         }
     }
@@ -800,7 +850,7 @@ fun MenuScreen(navController: NavController){
         ConstraintLayout(modifier = Modifier.fillMaxSize()){
             val guidelines = setupColumnGuidelines()
 
-            val (menu1, menu2, menu3, menu4, menu5, menu6) = createRefs()
+            val (menu1, menu2, menu3, menu4, menu5, menu6, menu7) = createRefs()
 
             ButtonBox(
                 iconId = R.drawable.account_m,
@@ -890,6 +940,28 @@ fun MenuScreen(navController: NavController){
                 }
             )
 
+            ButtonBox(
+                iconId = R.drawable.category_m,
+                iconSize = 120.dp,
+                fontSize = 14.sp,
+                text = "Generics",
+                onClickAction = {
+                    navController.navigate(Screen.Generics.route) {
+                        launchSingleTop = true
+                        popUpTo(Screen.MainMenu.route) {
+                            inclusive = true
+                        }
+                    }
+                },
+                inheritedModifier = Modifier.constrainAs(menu5) {
+                    top.linkTo(menu3.bottom, margin = 16.dp)
+                    start.linkTo(guidelines.c1start)
+                    end.linkTo(guidelines.c2end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
+
             if(UserSession.designationID != 2){
                 ButtonBox(
                     iconId = R.drawable.suppliers_m,
@@ -904,7 +976,7 @@ fun MenuScreen(navController: NavController){
                             }
                         }
                     },
-                    inheritedModifier = Modifier.constrainAs(menu5) {
+                    inheritedModifier = Modifier.constrainAs(menu6) {
                         top.linkTo(menu3.bottom, margin = 16.dp)
                         start.linkTo(guidelines.c1start)
                         end.linkTo(guidelines.c2end)
@@ -926,7 +998,7 @@ fun MenuScreen(navController: NavController){
                             }
                         }
                     },
-                    inheritedModifier = Modifier.constrainAs(menu6) {
+                    inheritedModifier = Modifier.constrainAs(menu7) {
                         top.linkTo(menu4.bottom, margin = 16.dp)
                         start.linkTo(guidelines.c3start)
                         end.linkTo(guidelines.c4end)
@@ -1122,6 +1194,56 @@ fun OrdersPage(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun GenericsScreen(
+    navController: NavController,
+    genericViewModel: GenericViewModel,
+    brandedGenericViewModel: BrandedGenericViewModel
+){
+    val generics by genericViewModel.generics.collectAsState()
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+        item{
+            CreateButton(
+                "Add New Generics",
+                inheritedModifier = Modifier.fillMaxWidth(),
+                onclick = {
+                    navController.navigate(Screen.UpsertGeneric.createRoute(-1)) {
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+
+        if(generics.isNotEmpty()){
+            items(generics){ generic ->
+                InfoPills(
+                    infoColor = Color(android.graphics.Color.parseColor("#123456")),
+                    modifier = Modifier.fillMaxWidth(),
+                    content = {
+                        CategoryPillText(
+                            categoryName = generic.genericName,
+                            medicineNumber = brandedGenericViewModel.getGenericSize(generic.id ?: -1)
+                        )
+                    },
+                    onClickAction = {
+                        navController.navigate(Screen.ViewGeneric.createRoute(generic.id ?: -1))
+                    }
+                )
             }
         }
     }

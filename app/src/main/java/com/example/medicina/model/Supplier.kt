@@ -1,7 +1,11 @@
 package com.example.medicina.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "suppliers")
 data class Supplier(
-    val id: Int = -1,
+    @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val name: String = "",
     val email: String = ""
 )

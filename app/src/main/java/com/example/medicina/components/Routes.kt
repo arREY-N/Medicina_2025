@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object Notifications : Screen("notifications")
     object Orders : Screen("orders")
     object Suppliers : Screen("suppliers")
+    object Generics: Screen("generics")
 
 
     object ViewCategory : Screen("medicineCategory?categoryID={categoryID}"){
@@ -30,6 +31,9 @@ sealed class Screen(val route: String) {
     object ViewSupplier : Screen("supplier?supplierID={supplierID}"){
         fun createRoute(supplierID: Int?) = "supplier?supplierID=$supplierID"
     }
+    object ViewGeneric: Screen("generic?genericID={genericID}"){
+        fun createRoute(genericID: Int?) = "generic?genericID=$genericID"
+    }
 
 
     object UpsertCategory : Screen("upsertCategory?categoryID={categoryID}"){
@@ -43,5 +47,8 @@ sealed class Screen(val route: String) {
     }
     object UpsertSupplier : Screen("upsertSupplier?supplierID={supplierID}"){
         fun createRoute(supplierID: Int) = "upsertSupplier?supplierID=$supplierID"
+    }
+    object UpsertGeneric : Screen("upsertGeneric?genericID={genericID}"){
+        fun createRoute(genericID: Int) = "upsertGeneric?genericID=$genericID"
     }
 }

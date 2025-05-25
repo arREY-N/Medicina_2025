@@ -43,7 +43,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.R
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
-import com.example.medicina.model.Repository.generics
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomGreen
 import com.example.medicina.viewmodel.CategoryViewModel
@@ -251,6 +250,7 @@ fun UpsertMedicineScreen(
     categoryViewModel: CategoryViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
     medicineCategoryViewModel: MedicineCategoryViewModel,
+    genericViewModel: GenericViewModel,
     navController: NavController,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -273,16 +273,15 @@ fun UpsertMedicineScreen(
 
     val upsertMedicine by medicineViewModel.upsertMedicine.collectAsState()
 
-    var selectedCategory by remember { mutableStateOf("") }
     var selectedRegulation by remember { mutableStateOf("") }
     var selectedItem by remember { mutableStateOf("") }
-
 
     LaunchedEffect(medicineID) {
         if(medicineID == -1){
             println("--RESET MEDICINE--")
             medicineViewModel.reset()
             brandedGenericViewModel.reset()
+            medicineCategoryViewModel.reset()
         } else {
             println("--RESET MEDICINE: $medicineID--")
             medicineID?.let {

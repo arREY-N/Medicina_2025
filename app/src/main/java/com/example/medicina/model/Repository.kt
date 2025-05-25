@@ -21,12 +21,20 @@ object Repository {
     lateinit var medicineDao: MedicineDao
     lateinit var categoryDao: CategoryDao
     lateinit var medicineCategoryDao: MedicineCategoryDao
+    lateinit var brandedGenericDao: BrandedGenericDao
+    lateinit var genericDao: GenericDao
+    lateinit var regulationDao: RegulationDao
+    lateinit var supplierDao: SupplierDao
 
     fun initialize(context: Context){
         data = Data(context)
         medicineDao = data.db.medicineDao()
         categoryDao = data.db.categoryDao()
         medicineCategoryDao = data.db.medicineCategoryDao()
+        brandedGenericDao = data.db.brandedGenericDao()
+        genericDao = data.db.genericDao()
+        regulationDao = data.db.regulationDao()
+        supplierDao = data.db.supplierDao()
     }
 
     suspend fun clearAllData(){
@@ -36,7 +44,18 @@ object Repository {
     }
 
     suspend fun initializeSampleData(){
-
+        if(regulationDao.getAllRegulations().first().isEmpty()){
+            regulationDao.insertRegulation(
+                Regulation(
+                    regulation = "OTC"
+                )
+            )
+            regulationDao.insertRegulation(
+                Regulation(
+                    regulation = "Prescription"
+                )
+            )
+        }
     }
 
     fun getAllMedicines(): Flow<List<Medicine>> = medicineDao.getAllMedicines()
@@ -54,17 +73,47 @@ object Repository {
         medicineDao.deleteMedicine(medicineId)
     }
 
+    // medicine category
     fun getAllMedicineCategory(): Flow<List<MedicineCategory>> = medicineCategoryDao.getAllMedicineCategories()
 
     suspend fun upsertMedicineCategory(medicineId: Int, updatedMedicineCategory: List<MedicineCategory>) {
         medicineCategoryDao.replaceCategoriesForMedicine(medicineId, updatedMedicineCategory)
     }
 
+    // medicine generics
+    fun getAllBrandedGenerics(): Flow<List<BrandedGeneric>> = brandedGenericDao.getAllBrandedGenerics()
+
+    suspend fun upsertBrandedGenerics(medicineId: Int, newEntries: List<BrandedGeneric>) {
+        brandedGenericDao.replaceCategoriesForMedicine(medicineId, newEntries)
+    }
+
+
+    // GENERICS
+
+    fun getAllGenerics(): Flow<List<Generic>> = genericDao.getAllGenerics()
+
+    suspend fun getGenericById(id: Int): Generic? = genericDao.getGenericById(id)
+
+    suspend fun upsertGeneric(generic: Generic): Long{
+        return if (generic.id == null) {
+            genericDao.insertGeneric(generic)
+        } else {
+            genericDao.updateGeneric(generic)
+            generic.id.toLong()
+        }
+    }
+
+    suspend fun deleteGeneric(generic: Generic){
+        generic.id?.let{
+            genericDao.deleteGeneric(generic.id)
+        }
+    }
+
     // CATEGORIES
 
     fun getAllCategories(): Flow<List<Category>> = categoryDao.getAllCategories()
 
-    fun getCategoryById(id: Int): Category? = TestData.CategoryRepository.find { it.id == id }
+    suspend fun getCategoryById(id: Int): Category? = categoryDao.getCategoryById(id)
 
     suspend fun upsertCategory(updatedCategory: Category): Long {
         return if (updatedCategory.id == null) {
@@ -75,26 +124,40 @@ object Repository {
         }
     }
 
-    fun getAllMedicineCategories(): Flow<List<MedicineCategory>> = medicineCategoryDao.getAllMedicineCategories()
-
-//        val index = TestData.CategoryRepository.indexOfFirst { it.id == updatedCategory.id }
-//
-//        if(index == -1){
-//            val id = TestData.CategoryRepository.size + 1
-//            val saveCategory = updatedCategory.copy(id = id)
-//            TestData.CategoryRepository.add(saveCategory)
-//            _categories.value = TestData.CategoryRepository.toList()
-//            return id
-//        } else {
-//            TestData.CategoryRepository[index] = updatedCategory
-//            _categories.value = TestData.CategoryRepository.toList()
-//        }
-//        return index
-//    }
-
     suspend fun deleteCategory(categoryId: Int){
         categoryDao.deleteCategory(categoryId)
     }
+
+
+    // REGULATIONS
+
+    fun getAllRegulations(): Flow<List<Regulation>> = regulationDao.getAllRegulations()
+
+    suspend fun getRegulationById(id: Int): Regulation? = regulationDao.getRegulationById(id)
+
+
+    // SUPPLIERS
+
+    fun getAllSuppliers(): Flow<List<Supplier>> = supplierDao.getAllSuppliers()
+
+    suspend fun getSupplierById(id: Int): Supplier? = supplierDao.getSupplierById(id)
+
+    suspend fun upsertSupplier(updatedSupplier: Supplier): Long {
+        return if (updatedSupplier.id == null) {
+            supplierDao.insertSupplier(updatedSupplier)
+        } else {
+            supplierDao.updateSupplier(updatedSupplier)
+            updatedSupplier.id.toLong()
+        }
+    }
+
+    suspend fun deleteSupplier(supplierId: Int){
+        supplierDao.deleteSupplier(supplierId)
+    }
+
+
+
+
 
 
     // ACCOUNTS
@@ -129,33 +192,6 @@ object Repository {
     // fun deleteAccount()
 
 
-    // SUPPLIERS
-
-
-    private val _suppliers = MutableStateFlow(TestData.SupplierRepository.toList())
-    val suppliers: StateFlow<List<Supplier>> = _suppliers
-    fun getAllSuppliers(): StateFlow<List<Supplier>> = suppliers
-
-    fun getSupplierById(id: Int): Supplier? = TestData.SupplierRepository.find { it.id == id }
-
-    fun upsertSupplier(upsertSupplier: Supplier){
-        val index = TestData.SupplierRepository.indexOfFirst { it.id == upsertSupplier.id }
-
-        if(index == -1){
-            val id = TestData.SupplierRepository.size + 1
-            val saveMedicine = upsertSupplier.copy(id = id)
-            TestData.SupplierRepository.add(saveMedicine)
-            _suppliers.value = TestData.SupplierRepository.toList()
-        } else {
-            TestData.SupplierRepository[index] = upsertSupplier
-            _suppliers.value = TestData.SupplierRepository.toList()
-        }
-    }
-
-    fun deleteSupplier(supplierId: Int){
-        TestData.SupplierRepository.removeIf { it.id == supplierId }
-    }
-
     // ORDERS
 
     private val _orders = MutableStateFlow(TestData.OrderRepository.toList())
@@ -183,11 +219,7 @@ object Repository {
         _orders.value = TestData.OrderRepository.toList()
     }
 
-    private val _generics = MutableStateFlow(TestData.GenericRepository.toList())
-    val generics: StateFlow<List<Generic>> = _generics
-    fun getAllGenerics(): StateFlow<List<Generic>> = generics
 
-    fun getGenericById(id: Int): Generic? = TestData.GenericRepository.find { it.id == id }
 
 
     fun getDesignationById(id: Int): Designation? = TestData.DesignationRepository.find { it.id == id }
@@ -195,23 +227,4 @@ object Repository {
 
     fun getNotificationById(id: Int): Notification? = TestData.NotificationRepository.find { it.id == id }
     fun getAllNotifications(): List<Notification> = TestData.NotificationRepository
-
-    fun getRegulationById(id: Int): Regulation? = TestData.RegulationRepository.find { it.id == id }
-    fun getAllRegulations(): List<Regulation> = TestData.RegulationRepository
-
-    private val _brandedGenerics = MutableStateFlow(TestData.BrandedGenericRepository.toList())
-    val brandedGenerics: StateFlow<List<BrandedGeneric>> = _brandedGenerics
-    fun getAllBrandedGenerics(): StateFlow<List<BrandedGeneric>> = brandedGenerics
-
-    fun updateBrandedGenericsForMedicine(medicineId: Int, newEntries: List<BrandedGeneric>) {
-        _brandedGenerics.update { currentList ->
-            // Remove all old entries for this medicine
-            val withoutOld = currentList.filterNot { it.medicineId == medicineId }
-
-            // Add new entries for this medicine
-            withoutOld + newEntries
-        }
-
-        println("Updated brandedGenerics: ${_brandedGenerics.value}")
-    }
 }

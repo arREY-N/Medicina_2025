@@ -35,7 +35,7 @@ class BrandedGenericViewModel: ViewModel() {
         initialValue = emptyList()
     )
 
-    val genericMap: StateFlow<Map<Int, Generic>> = generics
+    val genericMap: StateFlow<Map<Int?, Generic>> = generics
         .map { list -> list.associateBy { gen -> gen.id } }
         .stateIn(
             scope = viewModelScope,
@@ -51,6 +51,24 @@ class BrandedGenericViewModel: ViewModel() {
 
         _genericNames.value = generics.value.filter { it.id in matchingGenericIds }
         _upsertGenericNames.value = _genericNames.value
+    }
+
+    private val _medicineNames = MutableStateFlow<List<Medicine>>(emptyList())
+    val medicineNames: StateFlow<List<Medicine>> = _medicineNames
+
+    fun getMedicinesByGeneric(genericId: Int) : List<Medicine> {
+        val medicineIds = brandedGenerics.value
+            .filter { it.genericId == genericId }
+            .map { it.medicineId }
+            .toSet()
+
+        _medicineNames.value = medicines.value.filter { it.id in medicineIds }
+
+        return _medicineNames.value
+    }
+
+    fun getGenericSize(genericId: Int): Int {
+        return getMedicinesByGeneric(genericId).size
     }
 
     private val _genericNames = MutableStateFlow<List<Generic>>(emptyList())
@@ -91,18 +109,16 @@ class BrandedGenericViewModel: ViewModel() {
         return genNames
     }
 
-    fun save(medicineId: Int){
-        val newEntries = _upsertGenericNames.value.map { generic ->
+    suspend fun save(medicineId: Int){
+        val newGenerics = _upsertGenericNames.value.map { generic ->
             BrandedGeneric(
                 medicineId = medicineId,
-                genericId = generic.id
+                genericId = generic.id ?: -1
             )
         }
 
-        repository.updateBrandedGenericsForMedicine(
-            medicineId,
-            newEntries
-        )
+        println("New generics: $newGenerics")
+        repository.upsertBrandedGenerics(medicineId, newGenerics)
     }
 
     // reset the list for incoming new data

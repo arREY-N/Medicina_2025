@@ -71,14 +71,16 @@ class MedicineViewModel : ViewModel() {
     }
 
     fun getMedicineColor(categoryId: Int): String{
-        val category = repository.getCategoryById(categoryId)
-        return category?.hexColor ?: "#1A998E"
+        // val category = repository.getCategoryById(categoryId)
+        return "#9e9e9e" // category?.hexColor ?: "#1A998E"
     }
 
     fun getMedicineRegulation(regulationId: Int){
-        val regulation = repository.getRegulationById(regulationId)
-        regulation?.let {
-            _medicineRegulation.value = it
+        viewModelScope.launch {
+            val regulation = repository.getRegulationById(regulationId)
+            regulation?.let {
+                _medicineRegulation.value = it
+            }
         }
     }
 

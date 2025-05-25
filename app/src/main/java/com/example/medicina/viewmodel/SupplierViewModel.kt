@@ -13,10 +13,13 @@ import kotlinx.coroutines.flow.stateIn
 class SupplierViewModel : ViewModel() {
     private val repository = Repository
 
-    private val _suppliers = repository.getAllSuppliers()
-    val suppliers: StateFlow<List<Supplier>> = _suppliers
+    val suppliers = repository.getAllSuppliers().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val supplierMap: StateFlow<Map<Int, Supplier>> = _suppliers
+    val supplierMap: StateFlow<Map<Int?, Supplier>> = suppliers
         .map { list -> list.associateBy { it.id } }
         .stateIn(
             scope = viewModelScope,
@@ -30,7 +33,7 @@ class SupplierViewModel : ViewModel() {
     private val _upsertSupplier = MutableStateFlow(Supplier())
     val upsertSupplier: StateFlow<Supplier> = _upsertSupplier
 
-    fun save() {
+    suspend fun save() {
         repository.upsertSupplier(upsertSupplier.value)
         _supplierData.value = upsertSupplier.value
         reset()
@@ -41,11 +44,14 @@ class SupplierViewModel : ViewModel() {
         _upsertSupplier.value = Supplier()
     }
 
-    fun delete(){
-        repository.deleteSupplier(upsertSupplier.value.id)
+    suspend fun delete(){
+        val supplierId = upsertSupplier.value.id
+        supplierId?.let{
+            repository.deleteSupplier(supplierId)
+        }
     }
 
-    fun getSupplierById(supplierId: Int) {
+    suspend fun getSupplierById(supplierId: Int) {
         val supplier = repository.getSupplierById(supplierId)
         supplier?.let {
             _supplierData.value = it

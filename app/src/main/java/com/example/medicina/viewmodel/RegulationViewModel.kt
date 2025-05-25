@@ -13,18 +13,17 @@ import kotlinx.coroutines.flow.stateIn
 class RegulationViewModel: ViewModel() {
     private val repository = Repository
 
-    private val _regulations = MutableStateFlow<List<Regulation>>(emptyList())
-    val regulations: StateFlow<List<Regulation>> = _regulations
+    val regulations = repository.getAllRegulations().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
-    val regulationMap: StateFlow<Map<Int, Regulation>> = _regulations
+    val regulationMap: StateFlow<Map<Int?, Regulation>> = regulations
         .map { list -> list.associateBy { it.id } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
             initialValue = emptyMap()
         )
-
-    init {
-        _regulations.value = repository.getAllRegulations()
-    }
 }
