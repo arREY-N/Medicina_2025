@@ -10,20 +10,26 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.BrandedGenericViewModel
@@ -41,6 +47,7 @@ fun UpsertGenericScreen(
     genericViewModel: GenericViewModel,
     navController: NavController
 ){
+    var isEditing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     val upsertGeneric by genericViewModel.upsertGeneric.collectAsState()
@@ -48,8 +55,10 @@ fun UpsertGenericScreen(
     LaunchedEffect (genericID) {
         if(genericID == -1){
             genericViewModel.reset()
+            isEditing = false
         } else {
             genericID?.let { genericViewModel.getGenericById(genericID) }
+            isEditing = true
         }
     }
 
@@ -59,6 +68,11 @@ fun UpsertGenericScreen(
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            PageHeader(
+                title = if (isEditing) "Edit Generic" else "Add Generic"
+            )
+        }
         item{
             InputField(
                 inputName = "Generic Name",
@@ -75,25 +89,45 @@ fun UpsertGenericScreen(
                 action = "Confirm Generic",
                 confirmOnclick = {
                     coroutineScope.launch {
-                        val id = genericViewModel.save()
-                        genericViewModel.getGenericById(id)
-                        val savedGeneric = genericViewModel.upsertGeneric
-                        Toast.makeText(context, "Generic saved: ${savedGeneric.value.genericName}", Toast.LENGTH_SHORT).show()
-                        genericViewModel.reset()
-                        navController.popBackStack()
+                        try{
+                            genericViewModel.validateScreen()
+                            val id = genericViewModel.save()
+                            genericViewModel.getGenericById(id)
+                            val savedGeneric = genericViewModel.upsertGeneric
+                            Toast.makeText(context, "Generic saved: ${savedGeneric.value.genericName}", Toast.LENGTH_SHORT).show()
+
+                            navController.popBackStack()
+                            if(isEditing){
+                            } else {
+                                navController.navigate(Screen.ViewGeneric.createRoute(id)){
+                                    popUpTo(Screen.Generics.route) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
+                            genericViewModel.reset()
+                        } catch (e: MedicinaException){
+                            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
                 cancelOnclick = {
-                    println("DELETE CLICKED")
                     coroutineScope.launch{
-                        println("DLETE ONGOING!")
                         genericViewModel.delete()
+                        if(isEditing){
+                            navController.navigate(Screen.Generics.route){
+                                popUpTo(Screen.Generics.route) {
+                                    inclusive = true
+                                }
+                            }
+                        } else {
+                            navController.popBackStack()
+                        }
                         genericViewModel.reset()
-                        navController.popBackStack()
                     }
                 }
             )
-            Spacing(80.dp)
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -122,22 +156,28 @@ fun ReadGeneric(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            Spacing(4.dp)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = generic.genericName,
-                    color = CustomBlack,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-            Spacing(12.dp)
+            PageHeader(
+                title = generic.genericName
+            )
         }
+
+        item{
+            EditButton(
+                onEdit = {
+                    navController.navigate(Screen.UpsertGeneric.createRoute(genericId))
+                }
+            )
+        }
+
         if (genericMedicine.isNotEmpty()) {
             items(genericMedicine) { medicine ->
+                var quantity = 0
+                LaunchedEffect(medicine.id) {
+                    medicine.id?.let{
+                        quantity = orderViewModel.getTotalQuantity(medicine.id)
+                    }
+                }
+
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
                     infoColor = Color(android.graphics.Color.parseColor("#123456")),
@@ -145,7 +185,7 @@ fun ReadGeneric(
                         InventoryPillText(
                             brandName = medicine.brandName,
                             genericName = brandedGenericViewModel.getGenericNamesText(medicine.id),
-                            quantity = orderViewModel.getTotalQuantity(medicine.id!!).toString(),
+                            quantity = quantity.toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },

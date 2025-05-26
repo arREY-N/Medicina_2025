@@ -1,5 +1,6 @@
 package com.example.medicina.components
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,9 +27,12 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
+import com.example.medicina.functions.AccountFunctions
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.view.Homepage
 import com.example.medicina.viewmodel.AccountViewModel
 
 @Composable
@@ -90,7 +94,7 @@ fun AccountScreen(
 
     var editing by remember { mutableStateOf(false) }
 
-    var actionText = if (editing) "Save" else "Edit"
+    val actionText = if (editing) "Save" else "Edit"
 
     LaunchedEffect(accountInformation) {
         selectedDesignation = designationMap.values.firstOrNull { it.id == accountInformation.designationID }?.designation?: ""
@@ -135,13 +139,24 @@ fun AccountScreen(
                         if(!editing){
                             editing = true
                         } else {
-                            if(confirmPassword == accountInformation.password || UserSession.designationID == 0 || UserSession.designationID == 1){
-                                Toast.makeText(context, "Button Clicked", Toast.LENGTH_SHORT).show()
+                            try{
+                                AccountFunctions.handleSignUp(
+                                    account.firstname,
+                                    account.lastname,
+                                    account.middlename,
+                                    account.username,
+                                    account.password,
+                                    confirmPassword
+                                )
+
+                                accountViewModel.updateData { it.copy(designationID = 2) }
                                 accountViewModel.saveAccount()
+                                Toast.makeText(context, "${account.username} signed up!", Toast.LENGTH_SHORT).show()
+
                                 confirmPassword = ""
                                 editing = false
-                            } else {
-                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
+                            } catch(e: MedicinaException){
+                                Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -159,24 +174,26 @@ fun AccountScreen(
                 editable = editing
             )
         }
+
         item{
             DropdownInputField(
                 inputName = "Designation",
                 inputHint = "Designation",
-                onValueChange = { newValue ->
-                    selectedDesignation = newValue
+                selectedValue = selectedDesignation,
+                onValueChange = { newSelection ->
+                    selectedDesignation = newSelection
 
-                    val selectedId = designationMap.values.firstOrNull { it.designation == newValue }?.id
+                    val selectedId = designationMap.values.firstOrNull { it.designation == selectedDesignation }?.id
                     selectedId?.let {
-                        accountViewModel.updateData{ it.copy(designationID = selectedId) }
+                        accountViewModel.updateData { it.copy(designationID = selectedId) }
                     }
                 },
-                selectedValue = selectedDesignation,
                 dropdownOptions = designationNames,
-                modifier = Modifier.fillMaxWidth(),
+                width = Dimension.fillToConstraints,
                 editable = if(UserSession.designationID != 0) false else editing
             )
         }
+
         item{
             InputField(
                 inputName = "First name",

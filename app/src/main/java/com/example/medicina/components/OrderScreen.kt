@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,23 +13,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
-import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun UpsertOrderScreen(
@@ -41,6 +38,9 @@ fun UpsertOrderScreen(
     navController: NavController
 ){
     var isEditing by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val medicineMap by inventoryViewModel.medicineMap.collectAsState()
     val medicines by inventoryViewModel.medicines.collectAsState()
@@ -59,31 +59,36 @@ fun UpsertOrderScreen(
     LaunchedEffect(orderID) {
         if (orderID == -1) {
             orderViewModel.reset()
-            selectedSupplier = ""
-            selectedMedicine = ""
+            isEditing = false
         } else {
             isEditing = true
             orderID?.let{
                 orderViewModel.getOrderById(orderID)
             }
-
-            snapshotFlow { orderViewModel.upsertOrder.value }
-                .filter { it.id != -1 }
-                .firstOrNull()
-                ?.let { order ->
-                    selectedMedicine = medicineMap[order.medicineId]?.brandName ?: ""
-                    selectedSupplier = supplierMap[order.supplierId]?.name ?: ""
-                }
         }
     }
-    
+
+    LaunchedEffect(upsertOrder, medicineMap, supplierMap) {
+        if (isEditing && upsertOrder.id != null && medicineMap.isNotEmpty() && supplierMap.isNotEmpty()) {
+            selectedMedicine = medicineMap[upsertOrder.medicineId]?.brandName ?: ""
+            selectedSupplier = supplierMap[upsertOrder.supplierId]?.name ?: ""
+        }
+    }
+
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = Global.edgeMargin),
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if(upsertOrder.id != -1){
+        item{
+            PageHeader(
+                title = if (isEditing) "Edit Order" else "Add Order"
+            )
+        }
+
+        if(upsertOrder.id != null){
             item{
                 InputField(
                     inputName = "Order Date",
@@ -108,8 +113,7 @@ fun UpsertOrderScreen(
                     }
                 },
                 dropdownOptions = medicineNames,
-                width = Dimension.fillToConstraints,
-                addNew = true
+                width = Dimension.fillToConstraints
             )
         }
 
@@ -144,12 +148,12 @@ fun UpsertOrderScreen(
             )
         }
 
-        if(upsertOrder.id != -1){
+        if(upsertOrder.id != null){
             item{
                 InputField(
                     inputName = "Remaining Quantity",
                     inputHint = "Enter quantity",
-                    inputValue = if (upsertOrder.remainingQuantity == -1) "0" else upsertOrder.remainingQuantity.toString(),
+                    inputValue = if (upsertOrder.remainingQuantity == -1) "" else upsertOrder.remainingQuantity.toString(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     onValueChange = { newValue ->
                         val quantity = newValue.toIntOrNull() ?: -1
@@ -186,25 +190,38 @@ fun UpsertOrderScreen(
         }
 
         item {
-            val context = LocalContext.current
             Confirm(
                 action = "Confirm Order",
                 confirmOnclick = {
-                    orderViewModel.save()
-                    orderViewModel.reset()
-                    navController.popBackStack()
+                    coroutineScope.launch {
+                        try{
+                            orderViewModel.validateOrder()
+                            orderViewModel.save()
+                            Toast.makeText(context, "Order placed", Toast.LENGTH_SHORT).show()
+                            orderViewModel.reset()
+
+                            navController.popBackStack()
+
+                        } catch (e: MedicinaException){
+                            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 },
                 cancelOnclick = {
                     orderViewModel.delete()
                     orderViewModel.reset()
-                    navController.navigate(Screen.Inventory.route) {
-                        popUpTo(Screen.Inventory.route) {
-                            inclusive = true
+                    if(isEditing){
+                        navController.navigate(Screen.Orders.route){
+                            popUpTo(Screen.Orders.route) {
+                                inclusive = true
+                            }
                         }
+                    } else {
+                        navController.popBackStack()
                     }
                 }
             )
-            Spacing(80.dp)
+            Spacing(Global.edgeMargin)
         }
     }
 }

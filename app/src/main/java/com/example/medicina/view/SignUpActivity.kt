@@ -45,7 +45,7 @@ import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.components.PageHeader
 import com.example.medicina.components.Spacing
 import com.example.medicina.components.UIButton
-import com.example.medicina.functions.AccountException
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomWhite
@@ -169,13 +169,12 @@ fun SignUpScreen(
                                 confirmPassword
                             )
 
-                            accountViewModel.updateData { it.copy(designationID = 2) }
                             accountViewModel.saveAccount()
                             Toast.makeText(context, "${account.username} signed up!", Toast.LENGTH_SHORT).show()
 
                             val intent = Intent(context, Homepage::class.java)
                             context.startActivity(intent)
-                        } catch(e: AccountException){
+                        } catch(e: MedicinaException){
                             Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }

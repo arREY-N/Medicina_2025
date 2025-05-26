@@ -1,14 +1,15 @@
 package com.example.medicina.model
 
-import androidx.compose.ui.graphics.Color
-import com.example.medicina.ui.theme.CustomGreen
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import java.time.LocalDate
 
+@Entity(tableName = "notifications")
 data class Notification(
-    val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val notificationBanner: String = "",
     val notificationMessage: String = "",
     val notificationOverview: String = "",
     val date: LocalDate = LocalDate.now(),
-    val color: Color = CustomGreen
+    val color: String = "#123456"
 )

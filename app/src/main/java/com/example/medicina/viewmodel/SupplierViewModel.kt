@@ -1,7 +1,9 @@
 package com.example.medicina.viewmodel
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Repository
 import com.example.medicina.model.Supplier
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,10 +35,11 @@ class SupplierViewModel : ViewModel() {
     private val _upsertSupplier = MutableStateFlow(Supplier())
     val upsertSupplier: StateFlow<Supplier> = _upsertSupplier
 
-    suspend fun save() {
-        repository.upsertSupplier(upsertSupplier.value)
+    suspend fun save(): Int {
+        val id = repository.upsertSupplier(upsertSupplier.value)
         _supplierData.value = upsertSupplier.value
         reset()
+        return id.toInt()
     }
 
     fun reset(){
@@ -61,6 +64,16 @@ class SupplierViewModel : ViewModel() {
 
     fun updateData(transform: (Supplier) -> Supplier) {
         _upsertSupplier.value = transform(_upsertSupplier.value)
+    }
+
+    fun validateScreen(){
+        if(upsertSupplier.value.name.trim() == ""){
+            throw MedicinaException("Supplier name cannot be empty")
+        }
+
+        if(!Patterns.EMAIL_ADDRESS.matcher(upsertSupplier.value.email).matches()){
+            throw MedicinaException("Invalid email")
+        }
     }
 }
 

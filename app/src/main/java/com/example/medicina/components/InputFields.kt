@@ -58,6 +58,11 @@ import com.example.medicina.model.Generic
 import com.example.medicina.view.Homepage
 import com.example.medicina.viewmodel.MedicineViewModel
 import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.KeyboardCapitalization
+
+
 
 
 @Composable
@@ -68,7 +73,12 @@ fun InputField(
     inputValue: String = "",
     onValueChange: (String) -> Unit = {},
     visualTransformation: VisualTransformation = VisualTransformation.None,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(
+        capitalization = KeyboardCapitalization.Sentences,
+        autoCorrectEnabled = false,
+        keyboardType = KeyboardType.Text,
+        imeAction = ImeAction.Done
+    ),
     isMultiline: Boolean = false,
     contentAlignment: Alignment = Alignment.CenterStart,
     verticalArrangement: Alignment.Vertical = Alignment.CenterVertically,

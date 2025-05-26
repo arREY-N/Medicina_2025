@@ -2,6 +2,7 @@ package com.example.medicina.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.BrandedGeneric
 import com.example.medicina.model.Generic
 import com.example.medicina.model.Medicine
@@ -53,11 +54,6 @@ class GenericViewModel: ViewModel() {
             initialValue = emptyMap()
         )
 
-    suspend fun addGeneric(genericName: String){
-        val generic = Generic(genericName = genericName)
-        repository.upsertGeneric(generic)
-    }
-
     fun reset(){
         _genericData.value = Generic()
         _upsertGeneric.value = Generic()
@@ -76,5 +72,11 @@ class GenericViewModel: ViewModel() {
 
     suspend fun delete(){
         repository.deleteGeneric(_genericData.value)
+    }
+
+    fun validateScreen(){
+        if(_upsertGeneric.value.genericName.isEmpty()){
+            throw MedicinaException("Generic name cannot be empty")
+        }
     }
 }

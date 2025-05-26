@@ -6,4 +6,5 @@ import androidx.compose.ui.unit.dp
 object Global {
     var containerSize: Dp = 400.dp
     var edgeMargin: Dp = 16.dp
+    var colWidth: Dp = 40.dp
 }

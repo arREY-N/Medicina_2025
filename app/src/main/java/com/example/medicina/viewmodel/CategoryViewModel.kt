@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.example.medicina.model.Category
 import com.example.medicina.model.Repository
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Medicine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -69,6 +70,18 @@ class CategoryViewModel: ViewModel() {
                     _categoryData.value = it
                     _upsertCategory.value = it.copy()
                 }
+        }
+    }
+
+    fun validateScreen(){
+        if(upsertCategory.value.categoryName.trim().isEmpty()){
+            throw MedicinaException("Category name cannot be empty")
+        }
+
+        val regex = Regex("^#(\\d{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+        if(!regex.matches(upsertCategory.value.hexColor) || upsertCategory.value.hexColor.isEmpty() || upsertCategory.value.hexColor == "#9E9E9E"){
+            throw MedicinaException("Color must be in hexcode (#000000)")
         }
     }
 }

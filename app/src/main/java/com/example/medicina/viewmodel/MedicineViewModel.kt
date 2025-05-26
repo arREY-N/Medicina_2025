@@ -3,11 +3,9 @@ package com.example.medicina.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.medicina.model.Medicine
-import com.example.medicina.model.Order
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Repository
-import com.example.medicina.model.Category
 import com.example.medicina.model.Regulation
-import com.example.medicina.model.TestData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +36,7 @@ class MedicineViewModel : ViewModel() {
     val medicineRegulation: StateFlow<Regulation> = _medicineRegulation
 
     suspend fun save(): Int {
+        updateData { it.copy(price = upsertPrice.value.toFloat()) }
         val id = repository.upsertMedicine(upsertMedicine.value)
         _medicineData.value = upsertMedicine.value
         reset()
@@ -55,6 +54,8 @@ class MedicineViewModel : ViewModel() {
         _medicineData.value = Medicine()
         _upsertMedicine.value = Medicine()
         _medicineRegulation.value = Regulation()
+        _price.value = ""
+        _upsertPrice.value = ""
     }
 
     fun getMedicineById(medicineId: Int) {
@@ -66,6 +67,8 @@ class MedicineViewModel : ViewModel() {
                 .let {
                     _medicineData.value = it
                     _upsertMedicine.value = it.copy()
+                    _price.value = it.price.toString()
+                    _upsertPrice.value = it.copy().price.toString()
                 }
         }
     }
@@ -86,6 +89,30 @@ class MedicineViewModel : ViewModel() {
 
     fun updateData(transform: (Medicine) -> Medicine) {
         _upsertMedicine.value = transform(_upsertMedicine.value)
+    }
+
+    private val _price = MutableStateFlow("")
+    val price: StateFlow<String> = _price
+
+    private val _upsertPrice = MutableStateFlow("")
+    val upsertPrice: StateFlow<String> = _upsertPrice
+
+    fun updatePrice(price: String){
+        _upsertPrice.value = price
+    }
+
+    fun validateScreen(){
+        if(_upsertMedicine.value.brandName.trim().isEmpty()){
+            throw MedicinaException("Brand name cannot be empty")
+        }
+
+        if(upsertPrice.value.trim() == "" || upsertPrice.value.toFloatOrNull() == null || upsertPrice.value.toFloatOrNull() == 0f){
+            throw MedicinaException("Invalid price")
+        }
+
+        if(_upsertMedicine.value.regulationId == -1){
+            throw MedicinaException("Invalid regulation")
+        }
     }
 }
 

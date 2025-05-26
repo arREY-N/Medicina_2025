@@ -64,6 +64,8 @@ import com.example.medicina.viewmodel.SupplierViewModel
 import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import androidx.core.graphics.toColorInt
+import com.example.medicina.functions.MedicinaException
+import com.example.medicina.model.Order
 
 @Composable
 fun ReadMedicine(
@@ -84,12 +86,23 @@ fun ReadMedicine(
     val medicines by inventoryViewModel.medicineMap.collectAsState()
     val suppliers by supplierViewModel.supplierMap.collectAsState()
 
+    var expiringQuantity = 0
+    var quantity = 0
+    var tableData = emptyList<Order>()
+
     LaunchedEffect(medicineId) {
         brandedGenericViewModel.reset()
         medicineViewModel.getMedicineById(medicineId)
         brandedGenericViewModel.getGenericsById(medicineId)
         medicineCategoryViewModel.getCategoriesById(medicineId)
+        medicineId.let{
+            expiringQuantity = orderViewModel.getExpiringQuantity(medicineId)
+            quantity = orderViewModel.getTotalQuantity(medicineId)
+            tableData = orderViewModel.getOrderHistory(medicineId)
+        }
     }
+
+
 
     LaunchedEffect(medicineData) {
         medicineViewModel.getMedicineRegulation(medicineData.regulationId)
@@ -119,32 +132,11 @@ fun ReadMedicine(
         }
 
         item{
-            ConstraintLayout(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                val (editButton) = createRefs()
-
-                Surface(
-                    modifier = Modifier
-                        .constrainAs(editButton) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                        }
-                        .fillMaxWidth(),
-                    color = Color.Transparent,
-                    shape = RoundedCornerShape(50.dp)
-                ) {
-                    UIButton(
-                        text = "Edit",
-                        modifier =  Modifier.fillMaxSize(),
-                    onClickAction = {
-                        navController.navigate(Screen.UpsertMedicine.createRoute(medicineId))
-                    },
-                    isCTA = false,
-                    height = 40.dp
-                    )
+            EditButton(
+                onEdit = {
+                    navController.navigate(Screen.UpsertMedicine.createRoute(medicineId))
                 }
-            }
+            )
         }
 
 
@@ -173,7 +165,7 @@ fun ReadMedicine(
                         end.linkTo(guidelines.c2end)
                         width = Dimension.fillToConstraints},
                     infoLabel = "Expiring Quantity",
-                    infoValue = orderViewModel.getExpiringQuantity(medicineId)
+                    infoValue = expiringQuantity
                 )
 
                 InfoCard(
@@ -184,12 +176,10 @@ fun ReadMedicine(
                         width = Dimension.fillToConstraints
                     },
                     infoLabel = "Available Quantity",
-                    infoValue = orderViewModel.getTotalQuantity(medicineId)
+                    infoValue = quantity
                 )
             }
         }
-
-        val tableData = orderViewModel.getOrderHistory(medicineId)
 
         if(tableData.isNotEmpty()) {
             item{
@@ -218,7 +208,9 @@ fun ReadMedicine(
                         )
                     },
                     onClickAction = {
-                        navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+                        order.id?.let{
+                            navController.navigate(Screen.UpsertOrder.createRoute(order.id))
+                        }
                     }
                 )
             }
@@ -255,6 +247,8 @@ fun UpsertMedicineScreen(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
+    var isEditing by remember { mutableStateOf(false) }
+
     val genericMap by brandedGenericViewModel.genericMap.collectAsState()
     val generics by brandedGenericViewModel.generics.collectAsState()
     val genericNames = generics.map { it.genericName }
@@ -272,6 +266,7 @@ fun UpsertMedicineScreen(
     val regulationNames = regulations.map { it.regulation }
 
     val upsertMedicine by medicineViewModel.upsertMedicine.collectAsState()
+    val upsertPrice by medicineViewModel.upsertPrice.collectAsState()
 
     var selectedRegulation by remember { mutableStateOf("") }
     var selectedItem by remember { mutableStateOf("") }
@@ -282,27 +277,36 @@ fun UpsertMedicineScreen(
             medicineViewModel.reset()
             brandedGenericViewModel.reset()
             medicineCategoryViewModel.reset()
+            isEditing = false
         } else {
-            println("--RESET MEDICINE: $medicineID--")
-            medicineID?.let {
+            medicineID?.let{
+                println("--RESET MEDICINE: $medicineID--")
                 medicineViewModel.getMedicineById(medicineID)
                 brandedGenericViewModel.getGenericsById(medicineID)
                 medicineCategoryViewModel.getCategoriesById(medicineID)
+                isEditing = true
             }
         }
     }
 
     LaunchedEffect(upsertMedicine) {
-        if(upsertMedicine.id != -1){
+        if(upsertMedicine.id != null){
             selectedRegulation = regulationMap.values.firstOrNull { it.id == upsertMedicine.regulationId }?.regulation?: ""
         }
     }
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+
+        item{
+            PageHeader(
+                title = if (isEditing) "Edit Medicine" else "Add Medicine"
+            )
+        }
         item {
             Spacing(8.dp)
             InputField(
@@ -412,11 +416,8 @@ fun UpsertMedicineScreen(
             InputField(
                 inputName = "Price",
                 inputHint = "Enter price",
-                inputValue = if(upsertMedicine.price == 0f) "" else String.format(Locale.US, "%.2f", upsertMedicine.price),
-                onValueChange = { newValue ->
-                    val price = newValue.toFloatOrNull() ?: 0f
-                    medicineViewModel.updateData{ it.copy(price = price) }
-                },
+                inputValue = if(upsertPrice == "") "" else upsertPrice,
+                onValueChange = { newValue -> medicineViewModel.updatePrice(newValue) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -462,35 +463,48 @@ fun UpsertMedicineScreen(
                 action = "Confirm Medicine",
                 confirmOnclick = {
                     coroutineScope.launch {
-                        val id = medicineViewModel.save()
-                        medicineViewModel.getMedicineById(id)
-                        val savedMedicine = medicineViewModel.upsertMedicine
-                        brandedGenericViewModel.save(id)
-                        medicineCategoryViewModel.save(id)
-                        Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
-                        medicineViewModel.reset()
-                        navController.navigate(Screen.ViewMedicine.createRoute(id)){
-                            popUpTo(Screen.Inventory.route) {
-                                inclusive = false
-                            }
+                        try{
+                            medicineViewModel.validateScreen()
+                            brandedGenericViewModel.validateScreen()
+                            medicineCategoryViewModel.validateScreen()
+
+                            val id = medicineViewModel.save()
+                            medicineViewModel.getMedicineById(id)
+                            val savedMedicine = medicineViewModel.upsertMedicine
+                            brandedGenericViewModel.save(id)
+                            medicineCategoryViewModel.save(id)
+                            Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
+
+                            navController.popBackStack()
+
+                            medicineCategoryViewModel.reset()
+                            medicineViewModel.reset()
+                        } catch (e: MedicinaException){
+                            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },
                 cancelOnclick = {
-                    println("DELETE CLICKED")
                     coroutineScope.launch{
-                        println("DLETE ONGOING!")
+
                         medicineViewModel.delete()
-                        medicineViewModel.reset()
-                        navController.navigate(Screen.Inventory.route){
-                            popUpTo(Screen.Inventory.route) {
-                                inclusive = true
+
+                        if(isEditing){
+                            navController.navigate(Screen.Inventory.route){
+                                popUpTo(Screen.Inventory.route) {
+                                    inclusive = true
+                                }
                             }
+                        } else {
+                            navController.popBackStack()
                         }
+
+                        medicineViewModel.reset()
+                        medicineCategoryViewModel.reset()
                     }
                 }
             )
-            Spacing(80.dp)
+            Spacing(Global.edgeMargin)
         }
     }
 }

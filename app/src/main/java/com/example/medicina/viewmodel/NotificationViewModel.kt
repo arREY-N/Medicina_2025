@@ -13,13 +13,16 @@ import kotlinx.coroutines.flow.stateIn
 class NotificationViewModel: ViewModel() {
     private val repository = Repository
 
-    private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
-    val notifications: StateFlow<List<Notification>> = _notifications
+    val notifications= repository.getAllNotifications().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
     private val _notificationData = MutableStateFlow<Notification>(Notification())
     val notificationData: StateFlow<Notification> = _notificationData
 
-    val notificationsMap: StateFlow<Map<Int, Notification>> = _notifications
+    val notificationsMap: StateFlow<Map<Int?, Notification>> = notifications
         .map { list -> list.associateBy {it.id} }
         .stateIn(
             scope = viewModelScope,
@@ -27,11 +30,8 @@ class NotificationViewModel: ViewModel() {
             initialValue = emptyMap()
         )
 
-    init{
-        _notifications.value = repository.getAllNotifications()
-    }
 
-    fun getNotificationById(id: Int){
+    suspend fun getNotificationById(id: Int){
         val notification = repository.getNotificationById(id)
         notification?.let {
             _notificationData.value = it

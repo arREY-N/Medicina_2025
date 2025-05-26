@@ -45,6 +45,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.medicina.R
 
+fun NavHostController.navigateBottomTab(route: String) {
+    println("Going to: $route")
+    this.navigate(route) {
+        popUpTo("bottom_nav_root") {
+            inclusive = true
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 @Composable
 fun NavigationBar(
     navController: NavHostController
@@ -76,14 +88,7 @@ fun NavigationBar(
                 NavigationMenu(
                     text = "Home",
                     onClickAction = {
-                        navController.navigate(Screen.Home.route){
-                            popUpTo(Screen.Home.route) {
-                                inclusive = false
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateBottomTab(Screen.Home.route)
                     },
                     isClicked = currentRoute == Screen.Home.route,
                     inheritedModifier = Modifier.constrainAs(nav1){
@@ -100,13 +105,7 @@ fun NavigationBar(
                 NavigationMenu(
                     text = "Search",
                     onClickAction = {
-                        navController.navigate(Screen.Search.route){
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateBottomTab(Screen.Search.route)
                     },
                     isClicked = currentRoute == Screen.Search.route,
                     inheritedModifier = Modifier.constrainAs(nav2){
@@ -123,13 +122,7 @@ fun NavigationBar(
                 NavigationMenu(
                     text = "Inventory",
                     onClickAction = {
-                        navController.navigate(Screen.Inventory.route){
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateBottomTab(Screen.Inventory.route)
                     },
                     isClicked = currentRoute == Screen.Inventory.route,
                     inheritedModifier = Modifier.constrainAs(nav3){
@@ -146,13 +139,7 @@ fun NavigationBar(
                 NavigationMenu(
                     text = "Orders",
                     onClickAction = {
-                        navController.navigate(Screen.Orders.route) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateBottomTab(Screen.Orders.route)
                     },
                     isClicked = currentRoute == Screen.Orders.route,
                     inheritedModifier = Modifier.constrainAs(nav4){
@@ -174,13 +161,11 @@ fun NavigationBar(
 fun TopNavigation(
     isHome: Boolean = false,
     pageTitle: String = "Medicina",
-    navController: NavHostController
+    navController: NavHostController,
+    showMenu: Boolean = true
 ) {
     val context = LocalContext.current
     val currentRoute = navController.currentBackStackEntry?.destination?.route
-    val displayMenu = currentRoute == Screen.MainMenu.route
-
-    Toast.makeText(context, currentRoute.toString(), Toast.LENGTH_SHORT).show()
 
     Surface(
         modifier = Modifier
@@ -207,26 +192,27 @@ fun TopNavigation(
                     },
                 color = Color.Transparent
             ) {
-                Button(
-                    onClick = {
-                        if (!displayMenu) {
+                if(showMenu){
+                    Button(
+                        onClick = {
                             navController.navigate(Screen.MainMenu.route)
-                        } else {
-                            navController.popBackStack()
-                        }
-                    },
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    ),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.menu),
-                        contentDescription = "navigation icon",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
+                        },
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent,
+                            disabledContentColor = CustomGreen,
+                            disabledContainerColor = CustomGreen,
+                        ),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.menu),
+                            contentDescription = "navigation icon",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+
                 }
             }
 
@@ -301,7 +287,9 @@ fun NavigationMenu(
     Button (
         colors = ButtonDefaults.buttonColors(
             containerColor = CustomGreen,
-            contentColor = CustomWhite),
+            contentColor = CustomWhite,
+            disabledContainerColor = CustomGreen,
+            disabledContentColor = CustomWhite),
         modifier = Modifier
             .border(
                 width = 1.dp,
@@ -311,7 +299,8 @@ fun NavigationMenu(
             .then(inheritedModifier),
         shape = RoundedCornerShape(20.dp),
         onClick = onClickAction,
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(0.dp),
+        enabled = !isClicked
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 
 object Repository {
 
@@ -25,6 +26,10 @@ object Repository {
     lateinit var genericDao: GenericDao
     lateinit var regulationDao: RegulationDao
     lateinit var supplierDao: SupplierDao
+    lateinit var orderDao: OrderDao
+    lateinit var notificationDao: NotificationDao
+    lateinit var accountDao: AccountDao
+    lateinit var designationDao: DesignationDao
 
     fun initialize(context: Context){
         data = Data(context)
@@ -35,6 +40,10 @@ object Repository {
         genericDao = data.db.genericDao()
         regulationDao = data.db.regulationDao()
         supplierDao = data.db.supplierDao()
+        orderDao = data.db.orderDao()
+        notificationDao = data.db.notificationDao()
+        accountDao = data.db.accountDao()
+        designationDao = data.db.designationDao()
     }
 
     suspend fun clearAllData(){
@@ -56,9 +65,28 @@ object Repository {
                 )
             )
         }
+        if(designationDao.getAllDesignations().first().isEmpty()){
+            designationDao.insertDesignation(
+                Designation(
+                    designation = "Super Admin"
+                )
+            )
+            designationDao.insertDesignation(
+                Designation(
+                    designation = "Admin"
+                )
+            )
+            designationDao.insertDesignation(
+                Designation(
+                    designation = "User"
+                )
+            )
+        }
     }
 
     fun getAllMedicines(): Flow<List<Medicine>> = medicineDao.getAllMedicines()
+
+    suspend fun getMedicineById(id: Int): Medicine? = medicineDao.getMedicineById(id)
 
     suspend fun upsertMedicine(updatedMedicine: Medicine): Long {
         return if (updatedMedicine.id == null) {
@@ -155,76 +183,62 @@ object Repository {
         supplierDao.deleteSupplier(supplierId)
     }
 
+    // ORDERS
+
+    fun getAllOrders(): Flow<List<Order>> = orderDao.getAlOrders()
+
+    suspend fun getOrderById(id: Int): Order? = orderDao.getOrderById(id)
+
+    suspend fun upsertOrder(upsertOrder: Order): Long {
+        return if (upsertOrder.id == null){
+            orderDao.insertOrder(upsertOrder)
+        } else {
+            orderDao.updateOrder(upsertOrder)
+            upsertOrder.id.toLong()
+        }
+    }
+
+    suspend fun deleteOrder(orderId: Int){
+        orderDao.deleteOrder(orderId)
+    }
 
 
+    // NOTIFICATIONS
 
+    fun getAllNotifications(): Flow<List<Notification>> = notificationDao.getAllNotifications()
+
+    suspend fun getNotificationById(id: Int): Notification? = notificationDao.getNotificationById(id)
 
 
     // ACCOUNTS
 
-    private val _accounts = MutableStateFlow(TestData.AccountRepository.toList())
-    val accounts: StateFlow<List<Account>> = _accounts
 
-    init {
-        println("Repository initialized with accounts size: ${_accounts.value.size}")
+    fun getAllAccounts(): Flow<List<Account>> = accountDao.getAllAccounts()
+
+    @JvmStatic
+    fun getAccountsAtOnce(): List<Account> = runBlocking {
+        accountDao.getAllAccounts().first()
     }
 
-    fun getAllAccounts(): StateFlow<List<Account>> = accounts
+    suspend fun getAccountById(id: Int): Account? = accountDao.getAccountById(id)
 
-    fun getAccountById(id: Int): Account? = TestData.AccountRepository.find { it.id == id }
-
-    fun upsertAccount(updatedAccount: Account): Account{
-        val index = TestData.AccountRepository.indexOfFirst { it.id == updatedAccount.id }
-
-        if(index == -1){
-            val id = TestData.AccountRepository.size + 1
-            val saveAccount = updatedAccount.copy(id = id)
-            TestData.AccountRepository.add(saveAccount)
-            _accounts.value = TestData.AccountRepository.toList()
-            return saveAccount
+    suspend fun upsertAccount(updatedAccount: Account): Long {
+        return if(updatedAccount.id == null) {
+            accountDao.insertAccount(updatedAccount)
         } else {
-            TestData.AccountRepository[index] = updatedAccount
-            _accounts.value = TestData.AccountRepository.toList()
-        }
-        return updatedAccount
-    }
-
-    // fun deleteAccount()
-
-
-    // ORDERS
-
-    private val _orders = MutableStateFlow(TestData.OrderRepository.toList())
-    val orders: StateFlow<List<Order>> = _orders
-    fun getAllOrders(): StateFlow<List<Order>> = orders
-
-    fun getOrderById(id: Int): Order? = TestData.OrderRepository.find { it.id == id }
-
-    fun upsertOrder(upsertOrder: Order){
-        val index = TestData.OrderRepository.indexOfFirst { it.id == upsertOrder.id }
-
-        if(index == -1){
-            val id = TestData.OrderRepository.size + 1
-            val saveOrder = upsertOrder.copy(id = id)
-            TestData.OrderRepository.add(saveOrder)
-            _orders.value = TestData.OrderRepository.toList()
-        } else {
-            TestData.OrderRepository[index] = upsertOrder
-            _orders.value = TestData.OrderRepository.toList()
+            accountDao.updateAccount(updatedAccount)
+            updatedAccount.id.toLong()
         }
     }
 
-    fun deleteOrder(orderId: Int){
-        TestData.OrderRepository.removeIf { it.id == orderId }
-        _orders.value = TestData.OrderRepository.toList()
+    suspend fun deleteAccount(id: Int){
+        accountDao.deleteAccount(id)
     }
 
 
+    // DESIGNATION
 
 
-    fun getDesignationById(id: Int): Designation? = TestData.DesignationRepository.find { it.id == id }
-    fun getAllDesignation(): List<Designation> = TestData.DesignationRepository
-
-    fun getNotificationById(id: Int): Notification? = TestData.NotificationRepository.find { it.id == id }
-    fun getAllNotifications(): List<Notification> = TestData.NotificationRepository
+    fun getAllDesignations(): Flow<List<Designation>> = designationDao.getAllDesignations()
+    suspend fun getDesignationById(id: Int): Designation? = designationDao.getDesignationById(id)
 }

@@ -18,12 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomGreen
@@ -97,7 +101,7 @@ fun ButtonBox(
             .then(inheritedModifier),
         shape = RoundedCornerShape(20.dp),
         onClick = onClickAction,
-        contentPadding = PaddingValues(0.dp)
+        contentPadding = PaddingValues(6.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -120,19 +124,44 @@ fun ButtonBox(
             }
             Spacing(4.dp)
 
-            val maxLength = 9
-            val truncatedText = if (text.length > maxLength) {
-                text.substring(0, maxLength) + "..."
-            } else {
-                text
-            }
-
             Text(
-                text = truncatedText,
-                fontSize = fontSize)
+                text = text,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontSize = fontSize
+            )
         }
     }
 }
+
+@Composable
+fun EditButton(onEdit: () -> Unit = {},){
+    ConstraintLayout(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val (editButton) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .constrainAs(editButton) {
+                    top.linkTo(parent.top)
+                    start.linkTo(parent.start)
+                }
+                .fillMaxWidth(),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(50.dp)
+        ) {
+            UIButton(
+                text = "Edit",
+                modifier =  Modifier.fillMaxSize(),
+                onClickAction = { onEdit() },
+                isCTA = false,
+                height = 40.dp
+            )
+        }
+    }
+}
+
 
 @Composable
 fun CreateButton(

@@ -1,6 +1,10 @@
 package com.example.medicina.model
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "designations")
 data class Designation(
-    val id: Int = -1,
+    @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val designation: String = ""
 )

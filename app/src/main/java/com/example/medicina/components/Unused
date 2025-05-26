@@ -666,8 +666,6 @@ fun trial1LoginScreen(){
 fun SignUpScreen(){
     ConstraintLayout(modifier = Modifier.fillMaxWidth())
     {
-
-
         Text(
             text = "Create New Account",
             style = Typography.titleLarge,

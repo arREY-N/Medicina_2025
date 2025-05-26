@@ -2,6 +2,7 @@ package com.example.medicina.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.BrandedGeneric
 import com.example.medicina.model.Generic
 import com.example.medicina.model.Medicine
@@ -125,5 +126,11 @@ class BrandedGenericViewModel: ViewModel() {
     fun reset(){
         _genericNames.value = emptyList()
         _upsertGenericNames.value = emptyList()
+    }
+
+    fun validateScreen(){
+        if(_upsertGenericNames.value.isEmpty()){
+            throw MedicinaException("No generic names selected")
+        }
     }
 }

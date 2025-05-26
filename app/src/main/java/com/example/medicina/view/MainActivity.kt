@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.constraintlayout.compose.Dimension
 import androidx.core.view.WindowCompat
 import com.example.medicina.R
+import com.example.medicina.components.Global
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.components.InputField
 import com.example.medicina.components.Spacing
@@ -156,7 +157,7 @@ fun LogInScreen() {
                             context.startActivity(intent)
                             (context as? ComponentActivity)?.finish()
 
-                        } catch (e: AccountException){
+                        } catch (e: MedicinaException){
                             Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -180,6 +181,6 @@ fun LogInScreen() {
             )
         }
 
-        Spacing(80.dp)
+        Spacing(Global.edgeMargin)
     }
 }

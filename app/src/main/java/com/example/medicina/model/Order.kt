@@ -1,9 +1,29 @@
 package com.example.medicina.model
 
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.PrimaryKey
 import java.time.LocalDate
 
+@Entity(
+    tableName = "orders",
+    foreignKeys = [
+        ForeignKey(
+            entity = Medicine::class,
+            parentColumns = ["id"],
+            childColumns = ["medicineId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = Supplier::class,
+            parentColumns = ["id"],
+            childColumns = ["supplierId"],
+            onDelete = ForeignKey.CASCADE
+        )],
+    indices = [Index(value = ["medicineId"]), Index(value = ["supplierId"])])
 data class Order (
-    val id: Int = -1,
+    @PrimaryKey(autoGenerate = true) val id: Int? = null,
     val medicineId: Int = -1,
     val supplierId: Int = -1,
     val quantity: Int = -1,

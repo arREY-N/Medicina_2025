@@ -11,34 +11,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.Flow
 
 class InventoryViewModel: ViewModel() {
     private val repository = Repository
 
-    // private val _medicines = MutableStateFlow<List<Medicine>>(emptyList())
-    private val _medicines: StateFlow<List<Medicine>> = repository.getAllMedicines().stateIn(
+    val medicines = repository.getAllMedicines().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
 
-    val medicines: StateFlow<List<Medicine>> = _medicines
-
     val medicineMap: StateFlow<Map<Int?, Medicine>> = medicines
         .map { list -> list.associateBy { med -> med.id } }
         .stateIn(
             scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
+            started = SharingStarted.Eagerly,
             initialValue = emptyMap()
         )
 
     private val _searchedMedicines = mutableStateOf<List<Medicine>>(emptyList())
     val searchedMedicines: State<List<Medicine>> = _searchedMedicines
 
-    fun getMedicineByName(medicineName: String) {
-//        val searchedMedicines = repository.getMedicinesByName(medicineName)
-//        searchedMedicines?.let {
-//            _searchedMedicines.value = it
-//        }
-    }
 }

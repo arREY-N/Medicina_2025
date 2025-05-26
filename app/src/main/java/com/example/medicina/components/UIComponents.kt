@@ -282,15 +282,15 @@ fun PageHeader(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
+            .padding(vertical = Global.edgeMargin * 0.5f)
             .then(modifier),
         color = CustomWhite
     ){
         Text(
-            color = CustomGreen,
+            color = CustomBlack,
             text = title,
             fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )

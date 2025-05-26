@@ -2,6 +2,7 @@ package com.example.medicina.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.BrandedGeneric
 import com.example.medicina.model.Category
 import com.example.medicina.model.Generic
@@ -124,6 +125,12 @@ class MedicineCategoryViewModel: ViewModel() {
     }
 
     fun reset(){
-        _categoryNames.value = emptyList()
+        _upsertMedicineCategory.value = emptyList()
+    }
+
+    fun validateScreen(){
+        if(_upsertMedicineCategory.value.isEmpty()){
+            throw MedicinaException("No categories selected")
+        }
     }
 }
