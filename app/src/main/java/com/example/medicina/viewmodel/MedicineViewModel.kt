@@ -35,6 +35,9 @@ class MedicineViewModel : ViewModel() {
     private val _medicineRegulation = MutableStateFlow(Regulation())
     val medicineRegulation: StateFlow<Regulation> = _medicineRegulation
 
+    private val _upsertRegulation = MutableStateFlow(Regulation())
+    val upsertRegulation: StateFlow<Regulation> = _upsertRegulation
+
     suspend fun save(): Int {
         updateData { it.copy(price = upsertPrice.value.toFloat()) }
         val id = repository.upsertMedicine(upsertMedicine.value)
@@ -54,8 +57,9 @@ class MedicineViewModel : ViewModel() {
         _medicineData.value = Medicine()
         _upsertMedicine.value = Medicine()
         _medicineRegulation.value = Regulation()
-        _price.value = ""
-        _upsertPrice.value = ""
+        _upsertRegulation.value = Regulation()
+        _price.value = "0"
+        _upsertPrice.value = "0"
     }
 
     fun getMedicineById(medicineId: Int) {
@@ -83,6 +87,7 @@ class MedicineViewModel : ViewModel() {
             val regulation = repository.getRegulationById(regulationId)
             regulation?.let {
                 _medicineRegulation.value = it
+                _upsertRegulation.value = it.copy()
             }
         }
     }
@@ -94,7 +99,7 @@ class MedicineViewModel : ViewModel() {
     private val _price = MutableStateFlow("")
     val price: StateFlow<String> = _price
 
-    private val _upsertPrice = MutableStateFlow("")
+    private val _upsertPrice = MutableStateFlow("0")
     val upsertPrice: StateFlow<String> = _upsertPrice
 
     fun updatePrice(price: String){
@@ -106,7 +111,7 @@ class MedicineViewModel : ViewModel() {
             throw MedicinaException("Brand name cannot be empty")
         }
 
-        if(upsertPrice.value.trim() == "" || upsertPrice.value.toFloatOrNull() == null || upsertPrice.value.toFloatOrNull() == 0f){
+        if(upsertPrice.value.toFloatOrNull() == null){
             throw MedicinaException("Invalid price")
         }
 

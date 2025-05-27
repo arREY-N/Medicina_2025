@@ -80,9 +80,8 @@ fun SignUpScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
-            Spacing(72.dp)
+            Spacing(54.dp)
             PageHeader(
-                modifier = Modifier.fillMaxWidth(),
                 title = "Welcome to Medicina!"
             )
         }
@@ -202,6 +201,7 @@ fun SignUpScreen(
                     onClickAction = {
                         val intent = Intent(context, MainActivity::class.java)
                         context.startActivity(intent)
+                        (context as? ComponentActivity)?.finish()
                     }
                 )
             }

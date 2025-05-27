@@ -64,15 +64,16 @@ fun UpsertGenericScreen(
 
     LazyColumn (
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
             PageHeader(
-                title = if (isEditing) "Edit Generic" else "Add Generic"
+                title = if (isEditing) "Edit Generic" else "Add Generic",
+                subtitle = "Ensure correct spelling of generic names"
             )
         }
+
         item{
             InputField(
                 inputName = "Generic Name",
@@ -96,8 +97,8 @@ fun UpsertGenericScreen(
                             val savedGeneric = genericViewModel.upsertGeneric
                             Toast.makeText(context, "Generic saved: ${savedGeneric.value.genericName}", Toast.LENGTH_SHORT).show()
 
-                            navController.popBackStack()
                             if(isEditing){
+                                navController.popBackStack()
                             } else {
                                 navController.navigate(Screen.ViewGeneric.createRoute(id)){
                                     popUpTo(Screen.Generics.route) {
@@ -129,6 +130,10 @@ fun UpsertGenericScreen(
             )
             Spacing(Global.edgeMargin)
         }
+
+        item{
+            Spacing(Global.edgeMargin)
+        }
     }
 }
 
@@ -152,7 +157,9 @@ fun ReadGeneric(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(vertical = Global.edgeMargin),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{

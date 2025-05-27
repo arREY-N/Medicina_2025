@@ -135,7 +135,11 @@ fun ButtonBox(
 }
 
 @Composable
-fun EditButton(onEdit: () -> Unit = {},){
+fun EditButton(
+    text: String = "Edit",
+    onEdit: () -> Unit = {},
+    isCTA: Boolean = false
+){
     ConstraintLayout(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -152,10 +156,10 @@ fun EditButton(onEdit: () -> Unit = {},){
             shape = RoundedCornerShape(50.dp)
         ) {
             UIButton(
-                text = "Edit",
+                text = text,
                 modifier =  Modifier.fillMaxSize(),
                 onClickAction = { onEdit() },
-                isCTA = false,
+                isCTA = isCTA,
                 height = 40.dp
             )
         }

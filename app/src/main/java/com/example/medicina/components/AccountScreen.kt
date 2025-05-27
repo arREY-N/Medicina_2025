@@ -3,6 +3,7 @@ package com.example.medicina.components
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +33,7 @@ import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
+import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.view.Homepage
 import com.example.medicina.viewmodel.AccountViewModel
@@ -45,10 +48,15 @@ fun ViewAccounts(
 
     LazyColumn (
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            Spacing(Global.edgeMargin)
+            PageHeader(
+                title = "Accounts"
+            )
+        }
         if(accounts.isNotEmpty()){
             items(accounts) { item ->
                 InfoPills(
@@ -66,6 +74,25 @@ fun ViewAccounts(
                     }
                 )
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Accounts Available",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -101,68 +128,15 @@ fun AccountScreen(
     }
 
     LazyColumn (
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = Global.edgeMargin),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            ConstraintLayout(
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                val guidelines = setupColumnGuidelines()
-
-                val (
-                    bannerText,
-                    editButton
-                ) = createRefs()
-
-                Text(
-                    text = "Hello, ${account.firstname}!",
-                    fontSize = 32.sp,
-                    textAlign = TextAlign.Start,
-                    fontWeight = FontWeight.Bold,
-                    color = CustomBlack,
-                    modifier = Modifier.constrainAs(bannerText) {
-                        top.linkTo(parent.top, margin = 32.dp)
-                        start.linkTo(parent.start, margin = 8.dp)
-                    }
-                )
-
-                UIButton(
-                    text = actionText,
-                    modifier = Modifier
-                        .constrainAs(editButton) {
-                            top.linkTo(bannerText.top)
-                            end.linkTo(guidelines.c4end)
-                            width = Dimension.fillToConstraints
-                        },
-                    onClickAction = {
-                        if(!editing){
-                            editing = true
-                        } else {
-                            try{
-                                AccountFunctions.handleSignUp(
-                                    account.firstname,
-                                    account.lastname,
-                                    account.middlename,
-                                    account.username,
-                                    account.password,
-                                    confirmPassword
-                                )
-
-                                accountViewModel.updateData { it.copy(designationID = 2) }
-                                accountViewModel.saveAccount()
-                                Toast.makeText(context, "${account.username} signed up!", Toast.LENGTH_SHORT).show()
-
-                                confirmPassword = ""
-                                editing = false
-                            } catch(e: MedicinaException){
-                                Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    },
-                    isCTA = false
-                )
-            }
+            PageHeader(
+                title = "Hello, ${account.firstname}!"
+            )
         }
         item{
             InputField(
@@ -190,7 +164,7 @@ fun AccountScreen(
                 },
                 dropdownOptions = designationNames,
                 width = Dimension.fillToConstraints,
-                editable = if(UserSession.designationID != 0) false else editing
+                editable = if(UserSession.designationID == 3) false else editing
             )
         }
 
@@ -225,30 +199,74 @@ fun AccountScreen(
             )
         }
 
-        if(accountInformation.id == UserSession.accountID){
+        item{
+            InputField(
+                inputName = "Password",
+                inputHint = "Password",
+                inputValue = accountInformation.password,
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                onValueChange = { newValue -> accountViewModel.updateData{ it.copy(password = newValue) } },
+                editable = editing
+            )
+        }
+
+        if(editing && UserSession.designationID == 3){
             item{
                 InputField(
-                    inputName = "Password",
-                    inputHint = "Password",
-                    inputValue = accountInformation.password,
+                    inputName = "Confirm Password",
+                    inputHint = "Confirm Password",
                     visualTransformation = PasswordVisualTransformation(),
-                    onValueChange = { newValue -> accountViewModel.updateData{ it.copy(password = newValue) } },
-                    modifier = Modifier.fillMaxWidth(),
-                    editable = editing
+                    inputValue = if (UserSession.designationID == 3) confirmPassword else accountInformation.password,
+                    onValueChange = { confirmPassword = it },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            item{
-                if(editing){
-                    InputField(
-                        inputName = "Confirm Password",
-                        inputHint = "Confirm Password",
-                        visualTransformation = PasswordVisualTransformation(),
-                        inputValue = confirmPassword,
-                        onValueChange = { confirmPassword = it },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+        }
+
+        item{
+            Spacing(8.dp)
+            EditButton(
+                isCTA = if(editing) true else false,
+                text = actionText,
+                onEdit = {
+                    if(!editing){
+                        editing = true
+                    } else {
+                        try{
+                            if(UserSession.designationID == 3){
+                                AccountFunctions.handleSignUp(
+                                    accountInformation.id ?: 0,
+                                    accountInformation.firstname,
+                                    accountInformation.lastname,
+                                    accountInformation.middlename,
+                                    accountInformation.username,
+                                    accountInformation.password,
+                                    confirmPassword
+                                )
+                            } else {
+                                AccountFunctions.handleSignUp(
+                                    id,
+                                    accountInformation.firstname,
+                                    accountInformation.lastname,
+                                    accountInformation.middlename,
+                                    accountInformation.username,
+                                    accountInformation.password,
+                                    accountInformation.password
+                                )
+                            }
+
+                            accountViewModel.saveAccount()
+                            Toast.makeText(context, "Account saved", Toast.LENGTH_SHORT).show()
+
+                            confirmPassword = ""
+                            editing = false
+                        } catch(e: MedicinaException){
+                            Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+            )
         }
     }
 }

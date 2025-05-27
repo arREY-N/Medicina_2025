@@ -228,13 +228,14 @@ fun DatePickerInputField(
     inputName: String = "Date",
     inputHint: String = "Select a date",
     selectedDate: String,
-    onDateSelected: (String) -> Unit
+    onDateSelected: (String) -> Unit,
+    editable: Boolean = true
 ) {
     val datePickerState = rememberDatePickerState()
     var showDialog by remember { mutableStateOf(false) }
     val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
 
-    if (showDialog) {
+    if (showDialog && editable) {
         DatePickerDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
@@ -277,23 +278,38 @@ fun DatePickerInputField(
 @Composable
 fun PageHeader(
     modifier: Modifier = Modifier,
-    title: String = "Page Header"
+    title: String = "Page Header",
+    subtitle: String = "Page Subtitle"
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = Global.edgeMargin * 0.5f)
+            .padding(vertical = Global.edgeMargin)
             .then(modifier),
         color = CustomWhite
     ){
-        Text(
-            color = CustomBlack,
-            text = title,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.ExtraBold,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
+        Column(modifier = Modifier.fillMaxWidth()){
+            Text(
+                color = CustomBlack,
+                text = title,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+
+            if(subtitle != "Page Subtitle"){
+                Text(
+                    color = CustomBlack,
+                    text = subtitle,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+        }
     }
 }
 

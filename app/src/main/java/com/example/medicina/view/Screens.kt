@@ -109,7 +109,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavHostController
 import com.example.medicina.components.CategoryPillText
 import com.example.medicina.components.OrderPillText
 import com.example.medicina.components.ReadGeneric
@@ -121,6 +120,11 @@ import com.example.medicina.viewmodel.GenericViewModel
 import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import android.graphics.Color as AndroidColor
 import androidx.navigation.compose.navigation
+import com.example.medicina.components.PageHeader
+import com.example.medicina.components.navigateBottomTab
+import com.example.medicina.components.navigateMenuTab
+import androidx.navigation.NavHostController
+import com.example.medicina.components.SupplierPillText
 
 @Composable
 fun ScreenContainer(
@@ -176,11 +180,9 @@ fun MainScreen(){
 
     val (isHome, pageTitle) = when (currentRoute) {
         Screen.Home.route -> true to "Medicina"
-        Screen.Search.route -> true to "Search"
-        Screen.Inventory.route -> true to "Inventory"
-        Screen.Orders.route -> true to "Orders"
-        Screen.Notifications.route -> false to "Notification"
-        Screen.ViewNotification.route -> false to "Notification"
+        Screen.Search.route -> true to "Medicina"
+        Screen.Inventory.route -> true to "Medicina"
+        Screen.Orders.route -> true to "Medicina"
         else -> false to "Medicina"
     }
 
@@ -266,30 +268,6 @@ fun MainScreen(){
             popExitTransition = {
                 fadeOut(animationSpec = tween(durationMillis = 10))
             },
-//            enterTransition = {
-//                slideInHorizontally(
-//                    initialOffsetX = { it }, // from right
-//                    animationSpec = tween(durationMillis = 300)
-//                )
-//            },
-//            exitTransition = {
-//                slideOutHorizontally(
-//                    targetOffsetX = { -it }, // to left
-//                    animationSpec = tween(durationMillis = 300)
-//                )
-//            },
-//            popEnterTransition = {
-//                slideInHorizontally(
-//                    initialOffsetX = { -it }, // from left
-//                    animationSpec = tween(durationMillis = 300)
-//                )
-//            },
-//            popExitTransition = {
-//                slideOutHorizontally(
-//                    targetOffsetX = { it }, // to right
-//                    animationSpec = tween(durationMillis = 300)
-//                )
-//            },
             modifier = Modifier
                 .padding(innerPadding)
                 .background(CustomWhite)
@@ -353,17 +331,62 @@ fun MainScreen(){
                 }
             }
 
+            navigation(
+                startDestination = Screen.MainMenu.route,
+                route = "menu_nav_root"
+            ){
 
-            composable(Screen.MainMenu.route) {
-                ScreenContainer {
-                    MenuScreen(navController)
+                composable(Screen.MainMenu.route) {
+                    ScreenContainer {
+                        MenuScreen(navController)
+                    }
+                }
+
+                // notifications screen
+                composable(Screen.Notifications.route) {
+                    ScreenContainer { NotificationsPage(navController, notificationViewModel) }
+                }
+
+                // account screens
+                composable(
+                    route = Screen.ViewAccount.route,
+                    arguments = listOf(navArgument("accountID"){
+                        type = NavType.IntType
+                        defaultValue = -1
+                        nullable = false
+                    })
+                ) { backStackEntry ->
+                    val accountID = backStackEntry.arguments?.getInt("accountID") ?: -1
+                    ScreenContainer{
+                        AccountScreen(
+                            accountID,
+                            accountViewModel
+                        )
+                    }
+                }
+
+                composable(Screen.Accounts.route) {
+                    ScreenContainer { ViewAccounts(navController, accountViewModel) }
+                }
+
+                // categories screen
+                composable(Screen.Categories.route) {
+                    ScreenContainer{ CategoriesScreen(navController, categoryViewModel, medicineCategoryViewModel) }
+                }
+
+                // suppliers screen
+                composable(Screen.Suppliers.route) {
+                    ScreenContainer { ViewSuppliers(navController, supplierViewModel, orderViewModel) }
+                }
+
+                composable(Screen.Generics.route){
+                    ScreenContainer{
+                        GenericsScreen(navController, genericViewModel, brandedGenericViewModel)
+                    }
                 }
             }
 
-            // notifications screen
-            composable(Screen.Notifications.route) {
-                ScreenContainer { NotificationsPage(navController, notificationViewModel) }
-            }
+
             composable(
                 route = Screen.ViewNotification.route,
                 arguments = listOf(navArgument("notificationID"){
@@ -377,29 +400,6 @@ fun MainScreen(){
                 ScreenContainer { Notification(notificationID, notificationViewModel) }
             }
 
-
-            // account screens
-            composable(
-                route = Screen.ViewAccount.route,
-                arguments = listOf(navArgument("accountID"){
-                    type = NavType.IntType
-                    defaultValue = -1
-                    nullable = false
-                })
-            ) { backStackEntry ->
-                val accountID = backStackEntry.arguments?.getInt("accountID") ?: -1
-                ScreenContainer{
-                    AccountScreen(
-                        accountID,
-                        accountViewModel
-                    )
-                }
-            }
-            composable(Screen.Accounts.route) {
-                ScreenContainer { ViewAccounts(navController, accountViewModel) }
-            }
-
-            // medicine screens
             composable(
                 route = Screen.UpsertMedicine.route,
                 arguments = listOf(navArgument("medicineID") {
@@ -421,6 +421,7 @@ fun MainScreen(){
                     )
                 }
             }
+
             composable(
                 route = Screen.ViewMedicine.route,
                 arguments = listOf(navArgument("medicineID") {
@@ -444,6 +445,7 @@ fun MainScreen(){
                     )
                 }
             }
+
             composable(
                 route = Screen.UpsertOrder.route,
                 arguments = listOf(navArgument("orderID") {
@@ -463,10 +465,6 @@ fun MainScreen(){
                 }
             }
 
-            // categories screen
-            composable(Screen.Categories.route) {
-                ScreenContainer{ CategoriesScreen(navController, categoryViewModel, medicineCategoryViewModel) }
-            }
             composable(
                 route = Screen.UpsertCategory.route,
                 arguments = listOf(navArgument("categoryID") {
@@ -478,6 +476,7 @@ fun MainScreen(){
 
                 ScreenContainer{ UpsertCategoryScreen(categoryID, categoryViewModel, navController) }
             }
+
             composable(
                 route = Screen.ViewCategory.route,
                 arguments = listOf(navArgument("categoryID") {
@@ -500,10 +499,6 @@ fun MainScreen(){
                 }
             }
 
-            // suppliers screen
-            composable(Screen.Suppliers.route) {
-                ScreenContainer { ViewSuppliers(navController, supplierViewModel, orderViewModel) }
-            }
             composable(
                 route = Screen.UpsertSupplier.route,
                 arguments = listOf(navArgument("supplierID") {
@@ -515,6 +510,7 @@ fun MainScreen(){
 
                 ScreenContainer{ UpsertSuppliersScreen(supplierID, supplierViewModel, navController) }
             }
+
             composable(
                 route = Screen.ViewSupplier.route,
                 arguments = listOf(navArgument("supplierID") {
@@ -525,12 +521,6 @@ fun MainScreen(){
                 val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: -1
 
                 ScreenContainer{ ViewSupplier(supplierID, navController, orderViewModel, inventoryViewModel, supplierViewModel) }
-            }
-
-            composable(Screen.Generics.route){
-                ScreenContainer{
-                    GenericsScreen(navController, genericViewModel, brandedGenericViewModel)
-                }
             }
 
             composable(
@@ -578,7 +568,7 @@ fun MainScreen(){
 
 @Composable
 fun Home(
-    navController: NavController,
+    navController: NavHostController,
     searchViewModel: SearchViewModel,
     categoryViewModel: CategoryViewModel,
     notificationViewModel: NotificationViewModel
@@ -620,13 +610,7 @@ fun Home(
                                 Toast.makeText(context, "Searching for $searchItem", Toast.LENGTH_SHORT).show()
                                 searchViewModel.updateSearchItem(searchItem)
                                 searchViewModel.performSearch()
-                                navController.navigate(Screen.Search.createRoute(searchItem)){
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                navController.navigateBottomTab(Screen.Search.createRoute(searchItem))
                             },
                             modifier = Modifier
                                 .constrainAs(searchButton) {
@@ -670,9 +654,7 @@ fun Home(
                                 end.linkTo(guidelines.c4end)
                             }
                             .clickable {
-                                navController.navigate(Screen.Categories.route){
-                                    launchSingleTop = true
-                                }
+                                navController.navigateMenuTab(Screen.Categories.route)
                             },
                         color = CustomBlack
                     )
@@ -819,10 +801,13 @@ fun SearchPage(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            Spacing(Global.edgeMargin)
+        }
+
         item {
             ConstraintLayout(
                 modifier = Modifier
@@ -884,11 +869,15 @@ fun SearchPage(
                 )
             }
         }
+
+        item{
+            Spacing(Global.edgeMargin)
+        }
     }
 }
 
 @Composable
-fun MenuScreen(navController: NavController){
+fun MenuScreen(navController: NavHostController){
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
@@ -929,12 +918,7 @@ fun MenuScreen(navController: NavController){
                 fontSize = 14.sp,
                 text = "Categories",
                 onClickAction = {
-                    navController.navigate(Screen.Categories.route) {
-                        launchSingleTop = true
-                        popUpTo(Screen.MainMenu.route) {
-                            inclusive = true
-                        }
-                    }
+                    navController.navigateMenuTab(Screen.Categories.route)
                 },
                 inheritedModifier = Modifier.constrainAs(menu2) {
                     top.linkTo(parent.top)
@@ -951,12 +935,7 @@ fun MenuScreen(navController: NavController){
                 fontSize = 14.sp,
                 text = "Inventory",
                 onClickAction = {
-                    navController.navigate(Screen.Inventory.route) {
-                        launchSingleTop = true
-                        popUpTo(Screen.MainMenu.route) {
-                            inclusive = true
-                        }
-                    }
+                    navController.navigateBottomTab(Screen.Inventory.route)
                 },
                 inheritedModifier = Modifier.constrainAs(menu3) {
                     top.linkTo(menu1.bottom, margin = 16.dp)
@@ -973,12 +952,7 @@ fun MenuScreen(navController: NavController){
                 fontSize = 14.sp,
                 text = "Notifications",
                 onClickAction = {
-                    navController.navigate(Screen.Notifications.route) {
-                        launchSingleTop = true
-                        popUpTo(Screen.MainMenu.route) {
-                            inclusive = true
-                        }
-                    }
+                    navController.navigateMenuTab(Screen.Notifications.route)
                 },
                 inheritedModifier = Modifier.constrainAs(menu4) {
                     top.linkTo(menu2.bottom, margin = 16.dp)
@@ -995,12 +969,7 @@ fun MenuScreen(navController: NavController){
                 fontSize = 14.sp,
                 text = "Generics",
                 onClickAction = {
-                    navController.navigate(Screen.Generics.route) {
-                        launchSingleTop = true
-                        popUpTo(Screen.MainMenu.route) {
-                            inclusive = true
-                        }
-                    }
+                    navController.navigateMenuTab(Screen.Generics.route)
                 },
                 inheritedModifier = Modifier.constrainAs(menu5) {
                     top.linkTo(menu3.bottom, margin = 16.dp)
@@ -1011,41 +980,31 @@ fun MenuScreen(navController: NavController){
                 }
             )
 
-            if(UserSession.designationID != 2){
-                ButtonBox(
-                    iconId = R.drawable.suppliers_m,
-                    iconSize = 120.dp,
-                    fontSize = 14.sp,
-                    text = "Suppliers",
-                    onClickAction = {
-                        navController.navigate(Screen.Suppliers.route) {
-                            launchSingleTop = true
-                            popUpTo(Screen.MainMenu.route) {
-                                inclusive = true
-                            }
-                        }
-                    },
-                    inheritedModifier = Modifier.constrainAs(menu6) {
-                        top.linkTo(menu4.bottom, margin = 16.dp)
-                        start.linkTo(guidelines.c3start)
-                        end.linkTo(guidelines.c4end)
-                        width = Dimension.fillToConstraints
-                        height = Dimension.ratio("1:1")
-                    }
-                )
+            ButtonBox(
+                iconId = R.drawable.suppliers_m,
+                iconSize = 120.dp,
+                fontSize = 14.sp,
+                text = "Suppliers",
+                onClickAction = {
+                    navController.navigateMenuTab(Screen.Suppliers.route)
+                },
+                inheritedModifier = Modifier.constrainAs(menu6) {
+                    top.linkTo(menu4.bottom, margin = 16.dp)
+                    start.linkTo(guidelines.c3start)
+                    end.linkTo(guidelines.c4end)
+                    width = Dimension.fillToConstraints
+                    height = Dimension.ratio("1:1")
+                }
+            )
 
+            if(UserSession.designationID != 3){
                 ButtonBox(
                     iconId = R.drawable.users_m,
                     iconSize = 120.dp,
                     fontSize = 14.sp,
                     text = "Users",
                     onClickAction = {
-                        navController.navigate(Screen.Accounts.route) {
-                            launchSingleTop = true
-                            popUpTo(Screen.MainMenu.route) {
-                                inclusive = true
-                            }
-                        }
+                        navController.navigateMenuTab(Screen.Accounts.route)
                     },
                     inheritedModifier = Modifier.constrainAs(menu7) {
                         top.linkTo(menu5.bottom, margin = 16.dp)
@@ -1072,7 +1031,9 @@ fun NotificationsPage(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            Spacing(Global.edgeMargin)
+            PageHeader(
+                title = "Notifications"
+            )
         }
         if (notifications.isNotEmpty()) {
             items(notifications) { notification ->
@@ -1092,6 +1053,25 @@ fun NotificationsPage(
                     }
                 )
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Notifications",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -1111,11 +1091,11 @@ fun Notification(
 
     LazyColumn (
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            Spacing(Global.edgeMargin)
             Text(
                 notificationData.notificationBanner,
                 fontSize = 32.sp,
@@ -1151,15 +1131,18 @@ fun InventoryPage(
     medicineViewModel: MedicineViewModel,
     brandedGenericViewModel: BrandedGenericViewModel
 ) {
-
     val medicines by viewModel.medicines.collectAsState()
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            PageHeader(
+                title = "Inventory"
+            )
+        }
         item {
             CreateButton(
                 "Add New Medicine",
@@ -1193,7 +1176,27 @@ fun InventoryPage(
                     }
                 )
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Medicine Data Available",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
         }
+
+        item{
+            Spacing(Global.edgeMargin)
+        }
+
     }
 }
 
@@ -1211,18 +1214,25 @@ fun OrdersPage(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            CreateButton(
-                "Add New Order",
-                inheritedModifier = Modifier.fillMaxWidth(),
-                onclick = {
-                    navController.navigate(Screen.UpsertOrder.createRoute(-1))
-                }
+            PageHeader(
+                title = "Orders"
             )
+        }
+
+        if(UserSession.designationID != 3){
+            item{
+                CreateButton(
+                    "Add New Order",
+                    inheritedModifier = Modifier.fillMaxWidth(),
+                    onclick = {
+                        navController.navigate(Screen.UpsertOrder.createRoute(-1))
+                    }
+                )
+            }
         }
 
         if(orders.isNotEmpty()) {
@@ -1251,6 +1261,25 @@ fun OrdersPage(
                     )
                 }
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Order History",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -1266,9 +1295,14 @@ fun GenericsScreen(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
+        item{
+            PageHeader(
+                title = "Generics"
+            )
+        }
         item{
             CreateButton(
                 "Add New Generic",
@@ -1285,15 +1319,30 @@ fun GenericsScreen(
                     infoColor = Color(android.graphics.Color.parseColor("#123456")),
                     modifier = Modifier.fillMaxWidth(),
                     content = {
-                        CategoryPillText(
-                            categoryName = generic.genericName,
-                            medicineNumber = brandedGenericViewModel.getGenericSize(generic.id ?: -1)
+                        SupplierPillText(
+                            supplierName = generic.genericName,
+                            orders = brandedGenericViewModel.getGenericSize(generic.id ?: -1)
                         )
                     },
                     onClickAction = {
                         navController.navigate(Screen.ViewGeneric.createRoute(generic.id ?: -1))
                     }
                 )
+            }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Generic Names Available",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
             }
         }
     }

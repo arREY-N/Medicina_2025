@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.functions.MedicinaException
+import com.example.medicina.model.UserSession
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
@@ -75,6 +76,7 @@ fun UpsertOrderScreen(
         }
     }
 
+    val isPermitted = UserSession.designationID != 3
 
     LazyColumn(
         modifier = Modifier
@@ -84,8 +86,24 @@ fun UpsertOrderScreen(
     ) {
         item{
             PageHeader(
-                title = if (isEditing) "Edit Order" else "Add Order"
+                title = if (isEditing) "Edit Order" else "Add Order",
+                subtitle = if (isEditing) "Non-admins can only edit the remaining quantity." else "Please answer all fields to place an order."
             )
+        }
+
+        if(upsertOrder.id != null){
+            item{
+                InputField(
+                    inputName = "Remaining Quantity",
+                    inputHint = "Enter quantity",
+                    inputValue = if (upsertOrder.remainingQuantity == -1) "" else upsertOrder.remainingQuantity.toString(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    onValueChange = { newValue ->
+                        val quantity = newValue.toIntOrNull() ?: -1
+                        orderViewModel.updateData { it.copy(remainingQuantity = quantity) }
+                    },
+                )
+            }
         }
 
         if(upsertOrder.id != null){
@@ -113,7 +131,8 @@ fun UpsertOrderScreen(
                     }
                 },
                 dropdownOptions = medicineNames,
-                width = Dimension.fillToConstraints
+                width = Dimension.fillToConstraints,
+                editable = isPermitted
             )
         }
 
@@ -131,7 +150,8 @@ fun UpsertOrderScreen(
                     }
                 },
                 dropdownOptions = supplierNames,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                editable = isPermitted
             )
         }
 
@@ -145,23 +165,11 @@ fun UpsertOrderScreen(
                     val quantity = newValue.toIntOrNull() ?: -1
                     orderViewModel.updateData { it.copy(quantity = quantity) }
                 },
+                editable = isPermitted
             )
         }
 
-        if(upsertOrder.id != null){
-            item{
-                InputField(
-                    inputName = "Remaining Quantity",
-                    inputHint = "Enter quantity",
-                    inputValue = if (upsertOrder.remainingQuantity == -1) "" else upsertOrder.remainingQuantity.toString(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    onValueChange = { newValue ->
-                        val quantity = newValue.toIntOrNull() ?: -1
-                        orderViewModel.updateData { it.copy(remainingQuantity = quantity) }
-                    },
-                )
-            }
-        }
+
 
         item{
             InputField(
@@ -169,7 +177,8 @@ fun UpsertOrderScreen(
                 inputHint = "Enter price",
                 inputValue = if (upsertPrice == "") "" else upsertPrice,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                onValueChange = { newValue -> orderViewModel.updatePrice(newValue) }
+                onValueChange = { newValue -> orderViewModel.updatePrice(newValue) },
+                editable = isPermitted
             )
         }
 
@@ -185,7 +194,8 @@ fun UpsertOrderScreen(
                 onDateSelected = { newValue ->
                     val parsedDate = LocalDate.parse(newValue, DateTimeFormatter.ofPattern("MMM d, yyyy"))
                     orderViewModel.updateData { it.copy(expirationDate = parsedDate) }
-                }
+                },
+                editable = isPermitted
             )
         }
 
@@ -208,13 +218,17 @@ fun UpsertOrderScreen(
                     }
                 },
                 cancelOnclick = {
-                    orderViewModel.delete()
-                    orderViewModel.reset()
                     if(isEditing){
-                        navController.navigate(Screen.Orders.route){
-                            popUpTo(Screen.Orders.route) {
-                                inclusive = true
+                        if(!isPermitted){
+                            Toast.makeText(context, "Must be an admin to delete orders", Toast.LENGTH_SHORT).show()
+                        } else {
+                            navController.navigate(Screen.Orders.route){
+                                popUpTo(Screen.Orders.route) {
+                                    inclusive = true
+                                }
                             }
+                            orderViewModel.delete()
+                            orderViewModel.reset()
                         }
                     } else {
                         navController.popBackStack()

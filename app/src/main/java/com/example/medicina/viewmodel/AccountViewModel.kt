@@ -72,7 +72,10 @@ class AccountViewModel : ViewModel() {
 
     fun saveAccount() {
         viewModelScope.launch {
-            updateData { it.copy(designationID = 3) }
+            if(_editAccount.value.designationID == null){
+                updateData { it.copy(designationID = 3) }
+            }
+
             val id = repository.upsertAccount(_editAccount.value)
 
             _account.value = editAccount.value
@@ -86,7 +89,4 @@ class AccountViewModel : ViewModel() {
         _editAccount.value = transform(_editAccount.value)
     }
 
-    fun logIn(){
-
-    }
 }

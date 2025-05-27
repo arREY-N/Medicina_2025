@@ -31,7 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.navigation.NavController
 import com.example.medicina.functions.MedicinaException
+import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
+import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.BrandedGenericViewModel
 import com.example.medicina.viewmodel.CategoryViewModel
@@ -49,6 +51,7 @@ fun UpsertCategoryScreen(
     navController: NavController
 ){
     var isEditing by remember { mutableStateOf(false) }
+    val isPermitted = UserSession.designationID != 3
     val coroutineScope = rememberCoroutineScope()
 
     val upsertCategory by categoryViewModel.upsertCategory.collectAsState()
@@ -66,12 +69,13 @@ fun UpsertCategoryScreen(
     LazyColumn (
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
             PageHeader(
-                title = if (isEditing) "Edit Category" else "Add Category"
+                title = if (isEditing) "Edit Category" else "Add Category",
+                subtitle = "Enter color code in hexadecimal format (#000000, #FFFFFF)"
             )
         }
 
@@ -124,7 +128,15 @@ fun UpsertCategoryScreen(
                             val savedCategory = categoryViewModel.upsertCategory
                             Toast.makeText(context, "Category saved: ${savedCategory.value.categoryName}", Toast.LENGTH_SHORT).show()
 
-                            navController.popBackStack()
+                            if(isEditing){
+                                navController.popBackStack()
+                            } else {
+                                navController.navigate(Screen.Categories.route){
+                                    popUpTo(Screen.Categories.route){
+                                        inclusive = true
+                                    }
+                                }
+                            }
 
                             categoryViewModel.reset()
                         } catch (e: MedicinaException){
@@ -134,17 +146,21 @@ fun UpsertCategoryScreen(
                 },
                 cancelOnclick = {
                     coroutineScope.launch{
-                        categoryViewModel.delete()
                         if (isEditing){
-                            navController.navigate(Screen.Categories.route){
-                                popUpTo(Screen.Categories.route) {
-                                    inclusive = true
+                            if(!isPermitted){
+                                Toast.makeText(context, "Must be an admin to delete categories", Toast.LENGTH_SHORT).show()
+                            } else {
+                                navController.navigate(Screen.Categories.route){
+                                    popUpTo(Screen.Categories.route) {
+                                        inclusive = true
+                                    }
                                 }
+                                categoryViewModel.delete()
+                                categoryViewModel.reset()
                             }
                         } else {
                             navController.popBackStack()
                         }
-                        categoryViewModel.reset()
                     }
                 }
             )
@@ -163,20 +179,26 @@ fun CategoriesScreen(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
-            CreateButton(
-                "Add New Category",
-                inheritedModifier = Modifier.fillMaxWidth(),
-                onclick = {
-                    navController.navigate(Screen.UpsertCategory.createRoute(-1)) {
-                        launchSingleTop = true
-                    }
-                }
+            PageHeader(
+                title = "Categories"
             )
+        }
+        if(UserSession.designationID != 3){
+            item{
+                CreateButton(
+                    "Add New Category",
+                    inheritedModifier = Modifier.fillMaxWidth(),
+                    onclick = {
+                        navController.navigate(Screen.UpsertCategory.createRoute(-1)) {
+                            launchSingleTop = true
+                        }
+                    }
+                )
+            }
         }
 
         if(categories.isNotEmpty()){
@@ -196,6 +218,25 @@ fun CategoriesScreen(
                     }
                 )
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Categories Available",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -219,31 +260,27 @@ fun CategoryMedicine(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(vertical = Global.edgeMargin),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
-            Spacing(4.dp)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = category.categoryName,
-                    color = CustomBlack,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
-            }
-            Spacing(12.dp)
+            PageHeader(
+                title = category.categoryName
+            )
         }
 
-        item{
-            EditButton(
-                onEdit = {
-                    navController.navigate(Screen.UpsertCategory.createRoute(categoryId))
-                }
-            )
+        val isPermitted = UserSession.designationID != 3
+
+        if(isPermitted){
+            item{
+                EditButton(
+                    onEdit = {
+                        navController.navigate(Screen.UpsertCategory.createRoute(categoryId))
+                    }
+                )
+            }
         }
 
         if (categoryMedicine.isNotEmpty()) {

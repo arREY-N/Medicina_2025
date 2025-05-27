@@ -20,15 +20,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavController
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.functions.MedicinaException
+import com.example.medicina.model.UserSession
+import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
@@ -48,19 +53,27 @@ fun ViewSuppliers(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
-            CreateButton(
-                "Add New Supplier",
-                inheritedModifier = Modifier.fillMaxWidth(),
-                onclick = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(-1))
-                }
+            PageHeader(
+                title = "Suppliers"
             )
         }
+
+        if(UserSession.designationID != 3){
+            item{
+                CreateButton(
+                    "Add New Supplier",
+                    inheritedModifier = Modifier.fillMaxWidth(),
+                    onclick = {
+                        navController.navigate(Screen.UpsertSupplier.createRoute(-1))
+                    }
+                )
+            }
+        }
+
         if(suppliers.isNotEmpty()){
             items(suppliers) { supplier ->
                 InfoPills(
@@ -77,6 +90,24 @@ fun ViewSuppliers(
                     }
                 )
             }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Suppliers Available",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+        }
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }
@@ -99,10 +130,11 @@ fun ViewSupplier(
         orderViewModel.getOrdersBySupplierId(supplierID)
     }
 
+    val isPermitted = UserSession.designationID != 3
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(vertical = 8.dp),
+            .padding(top = Global.edgeMargin),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
@@ -112,11 +144,13 @@ fun ViewSupplier(
         }
 
         item{
-            EditButton(
-                onEdit = {
-                    navController.navigate(Screen.UpsertSupplier.createRoute(supplierID))
-                }
-            )
+            if(isPermitted){
+                EditButton(
+                    onEdit = {
+                        navController.navigate(Screen.UpsertSupplier.createRoute(supplierID))
+                    }
+                )
+            }
         }
 
         if(orders.isNotEmpty()){
@@ -141,6 +175,21 @@ fun ViewSupplier(
                         }
                     }
                 )
+            }
+        } else {
+            item{
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Order History",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
             }
         }
     }
@@ -178,7 +227,8 @@ fun UpsertSuppliersScreen(
     ) {
         item{
             PageHeader(
-                title = if (isEditing) "Edit Supplier" else "Add Supplier"
+                title = if (isEditing) "Edit Supplier" else "Add Supplier",
+                subtitle = "Please answer all fields to add a supplier."
             )
         }
 

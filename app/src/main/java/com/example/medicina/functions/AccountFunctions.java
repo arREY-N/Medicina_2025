@@ -21,6 +21,25 @@ public class AccountFunctions {
         throw new MedicinaException("Incorrect username or password");
     }
 
+    public static String capitalizeWords(String str) {
+        StringBuilder result = new StringBuilder();
+        boolean capitalizeNext = true;
+
+        for (char c : str.toCharArray()) {
+            if (Character.isWhitespace(c)) {
+                capitalizeNext = true;
+                result.append(c);
+            } else if (capitalizeNext) {
+                result.append(Character.toUpperCase(c));
+                capitalizeNext = false;
+            } else {
+                result.append(c);
+            }
+        }
+
+        return result.toString();
+    }
+
     public static boolean handleSignUp(
             String p_firstname, String p_lastname,
             String p_middlename, String username,
@@ -32,7 +51,7 @@ public class AccountFunctions {
         String lastname = capitalizeWords(p_lastname);
         String middlename = capitalizeWords(p_middlename);
 
-        if(firstname.isEmpty() || lastname.isEmpty() || middlename.isEmpty() || username.isEmpty() || password.isEmpty()){
+        if(firstname.isEmpty() || lastname.isEmpty() || username.isEmpty() || password.isEmpty()){
             throw new MedicinaException("Please fill up all information fields!");
         }
 
@@ -64,22 +83,54 @@ public class AccountFunctions {
         return true;
     }
 
-    public static String capitalizeWords(String str) {
-        StringBuilder result = new StringBuilder();
-        boolean capitalizeNext = true;
+    public static boolean handleSignUp(
+            int id,
+            String p_firstname, String p_lastname,
+            String p_middlename, String username,
+            String password, String confirmPassword) throws MedicinaException {
 
-        for (char c : str.toCharArray()) {
-            if (Character.isWhitespace(c)) {
-                capitalizeNext = true;
-                result.append(c);
-            } else if (capitalizeNext) {
-                result.append(Character.toUpperCase(c));
-                capitalizeNext = false;
-            } else {
-                result.append(c);
+        List<Account> accounts = Repository.getAccountsAtOnce();
+
+        String firstname = capitalizeWords(p_firstname);
+        String lastname = capitalizeWords(p_lastname);
+        String middlename = capitalizeWords(p_middlename);
+
+        if(firstname.isEmpty() || lastname.isEmpty() || username.isEmpty() || password.isEmpty()){
+            throw new MedicinaException("Please fill up all information fields!");
+        }
+
+        if(!username.matches("^[a-zA-Z0-9]+$")){
+            throw new MedicinaException("Username can only contain letters and numbers!");
+        }
+
+        if(username.length() < 8){
+            throw new MedicinaException("Username must be at least 8 characters long!");
+        }
+
+        for (Account account : accounts) {
+            int accountId = (account.getId() != null) ? account.getId() : 0;
+
+            System.out.println("Account ID: " + accountId + "Username: " + account.getUsername());
+            System.out.println("Check ID: " + id + "Username: " + username.trim());
+
+            if (
+                    account.getUsername().equals(username.trim()) &&
+                            accountId != id) {
+                throw new MedicinaException("Username already in use!");
+            }
+            if(account.getFirstname().equals(firstname.trim()) && account.getLastname().equals(lastname.trim()) && account.getMiddlename().equals(middlename.trim()) && accountId != id){
+                throw new MedicinaException("User found! Log-in instead.");
             }
         }
 
-        return result.toString();
+        if(password.length() < 8){
+            throw new MedicinaException("Password must be at least 8 characters long!");
+        }
+
+        if(!password.equals(confirmPassword)){
+            throw new MedicinaException("Please retype password!");
+        }
+
+        return true;
     }
 }

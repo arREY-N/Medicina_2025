@@ -66,6 +66,7 @@ import java.time.format.DateTimeFormatter
 import androidx.core.graphics.toColorInt
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Order
+import com.example.medicina.model.UserSession
 
 @Composable
 fun ReadMedicine(
@@ -102,18 +103,19 @@ fun ReadMedicine(
         }
     }
 
-
-
     LaunchedEffect(medicineData) {
         medicineViewModel.getMedicineRegulation(medicineData.regulationId)
     }
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = Global.edgeMargin),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
+        item{
+            Spacing(Global.edgeMargin)
+        }
+
         item {
             MedicineOverview(
                 brandName = medicineData.brandName,
@@ -231,6 +233,10 @@ fun ReadMedicine(
                 Spacing(12.dp)
             }
         }
+
+        item{
+            Spacing(Global.edgeMargin)
+        }
     }
 }
 
@@ -267,6 +273,7 @@ fun UpsertMedicineScreen(
 
     val upsertMedicine by medicineViewModel.upsertMedicine.collectAsState()
     val upsertPrice by medicineViewModel.upsertPrice.collectAsState()
+    val upsertRegulation by medicineViewModel.upsertRegulation.collectAsState()
 
     var selectedRegulation by remember { mutableStateOf("") }
     var selectedItem by remember { mutableStateOf("") }
@@ -289,22 +296,23 @@ fun UpsertMedicineScreen(
         }
     }
 
-    LaunchedEffect(upsertMedicine) {
-        if(upsertMedicine.id != null){
-            selectedRegulation = regulationMap.values.firstOrNull { it.id == upsertMedicine.regulationId }?.regulation?: ""
-        }
+    LaunchedEffect(upsertMedicine){
+        selectedRegulation = regulationMap.values.firstOrNull { it.id == upsertMedicine.regulationId }?.regulation ?: ""
     }
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(top = Global.edgeMargin),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        item{
+            Spacing(Global.edgeMargin)
+        }
 
         item{
             PageHeader(
-                title = if (isEditing) "Edit Medicine" else "Add Medicine"
+                title = if (isEditing) "Edit Medicine" else "Add Medicine",
+                subtitle = "Only admins can set the price for each medicine"
             )
         }
         item {
@@ -413,17 +421,6 @@ fun UpsertMedicineScreen(
         }
 
         item {
-            InputField(
-                inputName = "Price",
-                inputHint = "Enter price",
-                inputValue = if(upsertPrice == "") "" else upsertPrice,
-                onValueChange = { newValue -> medicineViewModel.updatePrice(newValue) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-
-        item {
             DropdownInputField(
                 inputName = "Regulation",
                 inputHint = "Select regulation",
@@ -457,6 +454,26 @@ fun UpsertMedicineScreen(
             )
         }
 
+
+        val isEditable = UserSession.designationID != 3
+        val shouldShowPrice = isEditable || (!isEditable && !isEditing)
+
+        if (shouldShowPrice) {
+            item {
+                InputField(
+                    inputName = "Price",
+                    inputHint = "Must be admin to add price",
+                    inputValue = if (upsertPrice == "0") "" else upsertPrice,
+                    onValueChange = { newValue -> medicineViewModel.updatePrice(newValue) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    editable = isEditable
+                )
+            }
+        }
+
+
+
         item{
             val context = LocalContext.current
             Confirm(
@@ -486,24 +503,26 @@ fun UpsertMedicineScreen(
                 },
                 cancelOnclick = {
                     coroutineScope.launch{
-
-                        medicineViewModel.delete()
-
                         if(isEditing){
-                            navController.navigate(Screen.Inventory.route){
-                                popUpTo(Screen.Inventory.route) {
-                                    inclusive = true
+                            if(UserSession.designationID == 3){
+                                Toast.makeText(context, "Must be an admin to delete a medicine", Toast.LENGTH_SHORT).show()
+                            } else {
+                                medicineViewModel.delete()
+                                navController.navigate(Screen.Inventory.route){
+                                    popUpTo(Screen.Inventory.route) {
+                                        inclusive = true
+                                    }
                                 }
                             }
                         } else {
                             navController.popBackStack()
                         }
-
-                        medicineViewModel.reset()
-                        medicineCategoryViewModel.reset()
                     }
                 }
             )
+        }
+
+        item{
             Spacing(Global.edgeMargin)
         }
     }

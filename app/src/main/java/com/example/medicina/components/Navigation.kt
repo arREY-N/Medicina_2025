@@ -57,6 +57,17 @@ fun NavHostController.navigateBottomTab(route: String) {
     }
 }
 
+fun NavHostController.navigateMenuTab(route: String) {
+    this.navigate(route){
+        popUpTo("menu_nav_root") {
+            inclusive = true
+            saveState = true
+        }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
+
 @Composable
 fun NavigationBar(
     navController: NavHostController
