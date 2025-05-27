@@ -1,6 +1,7 @@
 package com.example.medicina.model
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.example.medicina.database.*
 import com.example.medicina.functions.MedicineFunctions
@@ -8,8 +9,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
@@ -84,8 +87,27 @@ object Repository {
         }
     }
 
-    fun getAllMedicines(): Flow<List<Medicine>> = medicineDao.getAllMedicines()
-
+    fun getAllMedicines(): Flow<List<Medicine>> = flow {
+        try {
+            // MedicineFunctions.getAllMedicines() is a blocking network call,
+            // so it must be run on a background thread.
+            val medicinesFromApi = withContext(Dispatchers.IO) {
+                // Make sure to use the fully qualified name if there's an ambiguity
+                // or ensure the import is specific enough.
+                com.example.medicina.functions.
+                MedicineFunctions.getAllMedicines()
+            }
+            emit(medicinesFromApi ?: emptyList())
+        // Emit the fetched list (or empty if null)
+        } catch (e: Exception) {
+            Log.e("Repository", "Error fetching medicines from API in Repository: ${e.message}", e)
+            emit(emptyList())
+        // Emit an empty list in case of an error
+        }
+    }.catch { e -> // Catch exceptions from the flow itself or downstream
+        Log.e("Repository", "Exception in getAllMedicines flow: ${e.message}", e)
+        emit(emptyList()) // Fallback to empty list
+    }
     suspend fun getMedicineById(id: Int): Medicine? = medicineDao.getMedicineById(id)
 
     suspend fun upsertMedicine(updatedMedicine: Medicine): Long {

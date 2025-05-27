@@ -24,7 +24,7 @@ class BrandedGenericViewModel: ViewModel() {
         initialValue = emptyList()
     )
 
-    val medicines = repository.getAllMedicines().stateIn(
+    val medicines: StateFlow<List<Medicine>> = repository.getAllMedicines().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = emptyList()
