@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Order
 import com.example.medicina.model.Repository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,15 +15,20 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import kotlinx.coroutines.flow.flatMapLatest
+import java.time.LocalDateTime
+
 
 class OrderViewModel : ViewModel() {
     private val repository = Repository
 
-    val orders = repository.getAllOrders().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = emptyList()
-    )
+    val orders = repository.getAllOrders()
+        .map{ list -> list.sortedBy { it.orderDate } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
     val orderMap: StateFlow<Map<Int?, Order>> = orders
         .map { list -> list.associateBy { it.id } }
@@ -56,7 +62,6 @@ class OrderViewModel : ViewModel() {
     }
 
     suspend fun save(): Int {
-
         val floatPrice = _upsertPrice.value.toFloatOrNull() ?: 0f
         val date = LocalDate.now()
         updateData { it.copy(orderDate = date) }
@@ -100,6 +105,9 @@ class OrderViewModel : ViewModel() {
         _upsertPrice.value = price
     }
 
+
+
+
     private val _supplierOrder = MutableStateFlow<List<Order>>(emptyList())
     val supplierOrder: StateFlow<List<Order>> = _supplierOrder
 
@@ -113,27 +121,48 @@ class OrderViewModel : ViewModel() {
         return _supplierOrder.value
     }
 
-    suspend fun getExpiringQuantity(medicineId: Int): Int {
-        val orderList = orders.first() // Get the current list snapshot
-        val expiringOrder = orderList
-            .filter { it.medicineId == medicineId }
-            .filter { it.remainingQuantity > -1 }
-            .minByOrNull { it.expirationDate }
 
-        return expiringOrder?.remainingQuantity ?: 0
+    // medicine orders
+
+    fun getMedicineOrders(medicineId: Int): StateFlow<List<Order>> {
+        return orders
+            .map { list -> list
+                .filter { it.medicineId == medicineId }
+                .filter { it.expirationDate.isAfter(LocalDate.now()) }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList()
+            )
+    }
+
+    fun getTotalQuantity(medicineId: Int): StateFlow<Int> {
+        return orders
+            .map { list ->
+                list.filter { it.medicineId == medicineId && it.remainingQuantity > 0 }
+                    .sumOf { it.remainingQuantity }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    }
+
+    fun getExpiringQuantity(medicineId: Int): StateFlow<Int> {
+        return orders
+            .map { list ->
+                val filtered = list.filter { it.medicineId == medicineId && it.remainingQuantity > -1 }
+                val earliestDate = filtered.minByOrNull { it.expirationDate }?.expirationDate
+                filtered
+                    .filter { it.expirationDate == earliestDate }
+                    .sumOf { it.remainingQuantity }
+            }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
     }
 
 
-    suspend fun getTotalQuantity(medicineId: Int): Int {
-        return orders.first()
-            .filter { it.medicineId == medicineId }
-            .filter { it.remainingQuantity > -1 }
-            .sumOf { it.remainingQuantity }
-    }
 
-    suspend fun getOrderHistory(medicineId: Int): List<Order> {
-        return orders.first().filter { it.medicineId == medicineId }
-    }
+    //
+
+
 
     fun validateOrder() {
         if(upsertOrder.value.medicineId == -1){

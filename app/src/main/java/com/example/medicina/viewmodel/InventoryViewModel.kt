@@ -16,11 +16,13 @@ import kotlinx.coroutines.flow.Flow
 class InventoryViewModel: ViewModel() {
     private val repository = Repository
 
-    val medicines = repository.getAllMedicines().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = emptyList()
-    )
+    val medicines = repository.getAllMedicines()
+        .map{ list -> list.sortedBy{ it.brandName.lowercase() } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
     val medicineMap: StateFlow<Map<Int?, Medicine>> = medicines
         .map { list -> list.associateBy { med -> med.id } }

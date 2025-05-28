@@ -14,11 +14,13 @@ import kotlinx.coroutines.launch
 class CategoryViewModel: ViewModel() {
     private val repository = Repository
 
-    val categories = repository.getAllCategories().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = emptyList()
-    )
+    val categories = repository.getAllCategories()
+        .map { list -> list.sortedBy { it.categoryName.lowercase() } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
     val categoryMap: StateFlow<Map<Int?, Category>> = categories
         .map { list -> list.associateBy { it.id } }

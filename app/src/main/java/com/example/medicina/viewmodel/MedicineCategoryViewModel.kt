@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class MedicineCategoryViewModel: ViewModel() {
     val repository = Repository
@@ -48,14 +49,30 @@ class MedicineCategoryViewModel: ViewModel() {
     private val _upsertMedicineCategory = MutableStateFlow<List<Category>>(emptyList())
     val upsertMedicineCategory: StateFlow<List<Category>> = _upsertMedicineCategory
 
-    fun getCategoriesById(medicineId: Int){
-        val matchingGenericIds = medicineCategories.value
-            .filter { it.medicineId == medicineId }
-            .map { it.categoryId }
-            .toSet()
+    fun getCategoriesById(medicineId: Int): Flow<List<Category>> =
+        medicineCategories.map { medicineCategoryList ->
+            val matchingIds = medicineCategoryList
+                .filter { it.medicineId == medicineId }
+                .map {it.categoryId }
+                .toSet()
 
-        _categoryNames.value = categories.value.filter { it.id in matchingGenericIds }
-        _upsertMedicineCategory.value = _categoryNames.value
+            categories.value.filter { it.id in matchingIds }
+        }
+
+    fun observeCategoriesById(medicineId: Int) {
+        viewModelScope.launch {
+            medicineCategories.map { medicineCategoryList ->
+                val matchingIds = medicineCategoryList
+                    .filter { it.medicineId == medicineId }
+                    .map { it.categoryId }
+                    .toSet()
+
+                categories.value.filter { it.id in matchingIds }
+            }.collect { filteredCategories ->
+                _categoryNames.value = filteredCategories
+                _upsertMedicineCategory.value = filteredCategories
+            }
+        }
     }
 
     // updates the list of categories
@@ -88,7 +105,11 @@ class MedicineCategoryViewModel: ViewModel() {
 
         println("medicine ID: $medicineId")
         medicineId?.let{
-            getCategoriesById(medicineId)
+            viewModelScope.launch {
+                getCategoriesById(medicineId).collect { categories ->
+                    _categoryNames.value = categories
+                }
+            }
         }
 
         if(_categoryNames.value.isEmpty()){

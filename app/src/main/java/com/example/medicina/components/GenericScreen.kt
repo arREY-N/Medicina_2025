@@ -28,8 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
 import com.example.medicina.functions.MedicinaException
+import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.BrandedGenericViewModel
@@ -37,6 +39,7 @@ import com.example.medicina.viewmodel.CategoryViewModel
 import com.example.medicina.viewmodel.GenericViewModel
 import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
+import com.example.medicina.viewmodel.NotificationViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -45,7 +48,8 @@ import java.util.Locale
 fun UpsertGenericScreen(
     genericID: Int? = null,
     genericViewModel: GenericViewModel,
-    navController: NavController
+    notificationViewModel: NotificationViewModel,
+    navController: NavController,
 ){
     var isEditing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
@@ -98,8 +102,22 @@ fun UpsertGenericScreen(
                             Toast.makeText(context, "Generic saved: ${savedGeneric.value.genericName}", Toast.LENGTH_SHORT).show()
 
                             if(isEditing){
+                                notificationViewModel.addNotification(
+                                    banner = "A generic name entry was edited!",
+                                    message = "${upsertGeneric.genericName} was edited!",
+                                    overview = "Generic edited",
+                                    action = "EDITED",
+                                    source = UserSession.username,
+                                )
                                 navController.popBackStack()
                             } else {
+                                notificationViewModel.addNotification(
+                                    banner = "A generic name entry was added!",
+                                    message = "${upsertGeneric.genericName} was added!",
+                                    overview = "Generic added",
+                                    action = "ADDED",
+                                    source = UserSession.username,
+                                )
                                 navController.navigate(Screen.ViewGeneric.createRoute(id)){
                                     popUpTo(Screen.Generics.route) {
                                         inclusive = true
@@ -114,13 +132,20 @@ fun UpsertGenericScreen(
                 },
                 cancelOnclick = {
                     coroutineScope.launch{
-                        genericViewModel.delete()
                         if(isEditing){
+                            notificationViewModel.addNotification(
+                                banner = "A generic name entry was deleted!",
+                                message = "${upsertGeneric.genericName} was deleted!",
+                                overview = "Generic deleted",
+                                action = "DELETED",
+                                source = UserSession.username,
+                            )
                             navController.navigate(Screen.Generics.route){
                                 popUpTo(Screen.Generics.route) {
                                     inclusive = true
                                 }
                             }
+                            genericViewModel.delete()
                         } else {
                             navController.popBackStack()
                         }
@@ -178,16 +203,19 @@ fun ReadGeneric(
 
         if (genericMedicine.isNotEmpty()) {
             items(genericMedicine) { medicine ->
-                var quantity = 0
-                LaunchedEffect(medicine.id) {
-                    medicine.id?.let{
-                        quantity = orderViewModel.getTotalQuantity(medicine.id)
-                    }
-                }
+                val quantity by medicine.id?.let {
+                    orderViewModel.getTotalQuantity(it).collectAsState()
+                } ?: remember { mutableStateOf(0) }
+
+                val categories by medicine.id?.let {
+                    medicineCategoryViewModel.getCategoriesById(it).collectAsState(initial = emptyList())
+                } ?: remember { mutableStateOf(emptyList()) }
+
+                val infoColor = categories.map { Color(it.hexColor.toColorInt()) }
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = Color(android.graphics.Color.parseColor("#123456")),
+                    infoColor = infoColor,
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,

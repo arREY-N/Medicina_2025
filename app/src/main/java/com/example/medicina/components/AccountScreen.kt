@@ -32,9 +32,12 @@ import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.UserSession
+import com.example.medicina.ui.theme.Admin
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
+import com.example.medicina.ui.theme.SuperAdmin
+import com.example.medicina.ui.theme.User
 import com.example.medicina.view.Homepage
 import com.example.medicina.viewmodel.AccountViewModel
 
@@ -59,14 +62,28 @@ fun ViewAccounts(
         }
         if(accounts.isNotEmpty()){
             items(accounts) { item ->
+
+                val color =
+                    when (item.designationID){
+                        1 -> {
+                            SuperAdmin
+                        }
+                        2 -> {
+                            Admin
+                        }
+                        else -> {
+                            User
+                        }
+                    }
+
                 InfoPills(
-                    infoColor = CustomRed,
+                    infoColor = listOf(color),
                     modifier = Modifier.fillMaxWidth(),
                     content = {
-                        NotificationPillText(
-                            title = "${item.firstname} ${item.lastname}",
-                            subtitle = item.username,
-                            details = designationMap[item.designationID]?.designation ?: ""
+                        AccountPillText(
+                            name = "${item.firstname} ${item.lastname}",
+                            username = item.username,
+                            designation = designationMap[item.designationID]?.designation ?: ""
                         )
                     },
                     onClickAction = {

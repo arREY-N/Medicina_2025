@@ -1,5 +1,6 @@
 package com.example.medicina.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,7 +20,9 @@ import kotlinx.coroutines.launch
 class AccountViewModel : ViewModel() {
     private val repository = Repository
 
-    val accounts = repository.getAllAccounts().stateIn(
+    val accounts = repository.getAllAccounts()
+        .map{ list -> list.sortedBy { it.firstname } }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = emptyList()
@@ -88,5 +91,59 @@ class AccountViewModel : ViewModel() {
     fun updateData(transform: (Account) -> Account) {
         _editAccount.value = transform(_editAccount.value)
     }
+
+    fun saveToPreferences(context: Context, key: String, value: String) {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putString(key, value)
+            apply()
+        }
+    }
+
+    fun saveLoginState(context: Context, accountId: Int, username: String, designation: Int) {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putBoolean("is_logged_in", true)
+            putInt("account_id", accountId)
+            putString("username", username)
+            putInt("designation_id", designation)
+            apply()
+        }
+    }
+
+    fun clearLoginState(context: Context) {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        with(sharedPreferences.edit()) {
+            putBoolean("is_logged_in", false)
+            remove("account_id")
+            remove("username")
+            remove("designation_id")
+            apply()
+        }
+    }
+
+
+    fun isLoggedIn(context: Context): Boolean {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean("is_logged_in", false)
+    }
+
+    fun getSavedUserId(context: Context): Int {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getInt("account_id", -1) // -1 means not found
+    }
+
+    fun getSavedUsername(context: Context): String? {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("username", "") // -1 means not found
+    }
+
+    fun getSavedDesignationId(context: Context): Int {
+        val sharedPreferences = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getInt("designation_id", -1) // -1 means not found
+    }
+
+
+
 
 }

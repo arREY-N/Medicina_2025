@@ -67,6 +67,7 @@ import androidx.core.graphics.toColorInt
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.Order
 import com.example.medicina.model.UserSession
+import com.example.medicina.viewmodel.NotificationViewModel
 
 @Composable
 fun ReadMedicine(
@@ -87,23 +88,18 @@ fun ReadMedicine(
     val medicines by inventoryViewModel.medicineMap.collectAsState()
     val suppliers by supplierViewModel.supplierMap.collectAsState()
 
-    var expiringQuantity = 0
-    var quantity = 0
-    var tableData = emptyList<Order>()
+    val expiringQuantity by orderViewModel.getExpiringQuantity(medicineId).collectAsState()
+    val availableQuantity by orderViewModel.getTotalQuantity(medicineId).collectAsState()
+    val tableData by orderViewModel.getMedicineOrders(medicineId).collectAsState()
 
     LaunchedEffect(medicineId) {
         brandedGenericViewModel.reset()
         medicineViewModel.getMedicineById(medicineId)
         brandedGenericViewModel.getGenericsById(medicineId)
-        medicineCategoryViewModel.getCategoriesById(medicineId)
-        medicineId.let{
-            expiringQuantity = orderViewModel.getExpiringQuantity(medicineId)
-            quantity = orderViewModel.getTotalQuantity(medicineId)
-            tableData = orderViewModel.getOrderHistory(medicineId)
-        }
+        medicineCategoryViewModel.observeCategoriesById(medicineId)
     }
 
-    LaunchedEffect(medicineData) {
+    LaunchedEffect(medicineData.regulationId) {
         medicineViewModel.getMedicineRegulation(medicineData.regulationId)
     }
 
@@ -178,7 +174,7 @@ fun ReadMedicine(
                         width = Dimension.fillToConstraints
                     },
                     infoLabel = "Available Quantity",
-                    infoValue = quantity
+                    infoValue = availableQuantity
                 )
             }
         }
@@ -195,17 +191,19 @@ fun ReadMedicine(
             items(tableData) { order ->
                 val orderedItem = medicines[order.medicineId]?.copy()
                 val supplier = suppliers[order.supplierId]?.copy()
-                val orderDate = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                val expireDate = order.expirationDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomGreen, // Color(medicineViewModel.getMedicineColor(medicineCategory.get(0).id ?: -1).toColorInt()),
+                    infoColor = listOf(CustomGreen), // Color(medicineViewModel.getMedicineColor(medicineCategory.get(0).id ?: -1).toColorInt()),
+                    max = order.quantity,
+                    current = order.remainingQuantity,
                     content = {
                         OrderPillText(
                             orderedItem = orderedItem?.brandName ?: "",
                             supplier = supplier?.name ?: "",
-                            date = orderDate,
-                            quantity = order.quantity,
+                            date = expireDate,
+                            quantity = "${order.remainingQuantity}/${order.quantity}",
                             price = String.format(Locale.US, "%.2f", order.price)
                         )
                     },
@@ -248,7 +246,7 @@ fun UpsertMedicineScreen(
     categoryViewModel: CategoryViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
     medicineCategoryViewModel: MedicineCategoryViewModel,
-    genericViewModel: GenericViewModel,
+    notificationViewModel: NotificationViewModel,
     navController: NavController,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -290,7 +288,7 @@ fun UpsertMedicineScreen(
                 println("--RESET MEDICINE: $medicineID--")
                 medicineViewModel.getMedicineById(medicineID)
                 brandedGenericViewModel.getGenericsById(medicineID)
-                medicineCategoryViewModel.getCategoriesById(medicineID)
+                medicineCategoryViewModel.observeCategoriesById(medicineID)
                 isEditing = true
             }
         }
@@ -492,6 +490,24 @@ fun UpsertMedicineScreen(
                             medicineCategoryViewModel.save(id)
                             Toast.makeText(context, "Medicine saved: ${savedMedicine.value.brandName}_${savedMedicine.value.id}", Toast.LENGTH_SHORT).show()
 
+                            if(isEditing){
+                                notificationViewModel.addNotification(
+                                    banner = "A medicine entry was edited!",
+                                    message = "${upsertMedicine.brandName} was edited!",
+                                    overview = "Medicine edited",
+                                    action = "EDITED",
+                                    source = UserSession.username,
+                                )
+                            } else {
+                                notificationViewModel.addNotification(
+                                    banner = "A new medicine entry was added!",
+                                    message = "${upsertMedicine.brandName} was added!",
+                                    overview = "Medicine added",
+                                    action = "ADDED",
+                                    source = UserSession.username,
+                                )
+                            }
+
                             navController.popBackStack()
 
                             medicineCategoryViewModel.reset()
@@ -507,6 +523,13 @@ fun UpsertMedicineScreen(
                             if(UserSession.designationID == 3){
                                 Toast.makeText(context, "Must be an admin to delete a medicine", Toast.LENGTH_SHORT).show()
                             } else {
+                                notificationViewModel.addNotification(
+                                    banner = "A medicine entry was deleted!",
+                                    message = "${upsertMedicine.brandName} was deleted!",
+                                    overview = "Medicine deleted",
+                                    action = "DELETED",
+                                    source = UserSession.username,
+                                )
                                 medicineViewModel.delete()
                                 navController.navigate(Screen.Inventory.route){
                                     popUpTo(Screen.Inventory.route) {

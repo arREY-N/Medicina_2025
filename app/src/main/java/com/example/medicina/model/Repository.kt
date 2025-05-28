@@ -82,6 +82,29 @@ object Repository {
                 )
             )
         }
+        if(accountDao.getAllAccounts().first().isEmpty()){
+            accountDao.insertAccount(
+                Account(
+                    username = "superadmin",
+                    password = "superadmin",
+                    designationID = 1
+                )
+            )
+            accountDao.insertAccount(
+                Account(
+                    username = "admin",
+                    password = "admin",
+                    designationID = 2
+                )
+            )
+            accountDao.insertAccount(
+                Account(
+                    username = "user",
+                    password = "user",
+                    designationID = 3
+                )
+            )
+        }
     }
 
     fun getAllMedicines(): Flow<List<Medicine>> = medicineDao.getAllMedicines()
@@ -189,6 +212,8 @@ object Repository {
 
     suspend fun getOrderById(id: Int): Order? = orderDao.getOrderById(id)
 
+    fun getMedicineOrders(id: Int): Flow<List<Order>> = orderDao.getOrdersByMedicine(id)
+
     suspend fun upsertOrder(upsertOrder: Order): Long {
         return if (upsertOrder.id == null){
             orderDao.insertOrder(upsertOrder)
@@ -205,9 +230,19 @@ object Repository {
 
     // NOTIFICATIONS
 
+
     fun getAllNotifications(): Flow<List<Notification>> = notificationDao.getAllNotifications()
 
     suspend fun getNotificationById(id: Int): Notification? = notificationDao.getNotificationById(id)
+
+    suspend fun upsertNotification(updatedNotification: Notification): Long {
+        return if (updatedNotification.id == null) {
+            notificationDao.insertNotification(updatedNotification)
+        } else {
+            notificationDao.updateNotification(updatedNotification)
+            updatedNotification.id.toLong()
+        }
+    }
 
 
     // ACCOUNTS
@@ -241,4 +276,5 @@ object Repository {
 
     fun getAllDesignations(): Flow<List<Designation>> = designationDao.getAllDesignations()
     suspend fun getDesignationById(id: Int): Designation? = designationDao.getDesignationById(id)
+
 }

@@ -25,6 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.constraintlayout.compose.Dimension
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.medicina.R
 import com.example.medicina.components.Global
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
@@ -35,6 +36,7 @@ import com.example.medicina.ui.theme.CustomWhite
 import com.example.medicina.functions.*
 import com.example.medicina.model.Repository
 import com.example.medicina.model.UserSession
+import com.example.medicina.viewmodel.AccountViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,14 +45,29 @@ class MainActivity : ComponentActivity() {
         setContent {
             ComposePracticeTheme {
                 val context = LocalContext.current
+                var isRepoInitialized by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) {
                     Repository.initialize(context)
                     Repository.initializeSampleData()
+                    isRepoInitialized = true
                 }
 
+                if(isRepoInitialized){
+                    val accountViewModel: AccountViewModel = viewModel()
 
-                ScreenContainer{ LogInScreen() }
+                    if(!accountViewModel.isLoggedIn(context)){
+                        ScreenContainer{ LogInScreen() }
+                    } else {
+                        UserSession.accountID = accountViewModel.getSavedUserId(context)
+                        UserSession.designationID = accountViewModel.getSavedDesignationId(context)
+                        UserSession.username = accountViewModel.getSavedUsername(context) ?: ""
+
+                        val intent = Intent(context, Homepage::class.java)
+                        context.startActivity(intent)
+                        (context as? ComponentActivity)?.finish()
+                    }
+                }
             }
         }
     }
@@ -66,6 +83,7 @@ fun DefaultPreview() {
 
 @Composable
 fun LogInScreen() {
+    val accountViewModel: AccountViewModel = viewModel()
     val scrollState = rememberScrollState()
 
     val context = LocalContext.current
@@ -153,6 +171,13 @@ fun LogInScreen() {
                             Toast.makeText(context, "Successful login!", Toast.LENGTH_SHORT).show()
                             UserSession.accountID = account.id
                             UserSession.designationID = account.designationID
+
+                            accountViewModel.saveLoginState(
+                                context,
+                                account.id ?: 0,
+                                account.username,
+                                account.designationID ?: 0)
+
                             val intent = Intent(context, Homepage::class.java)
                             context.startActivity(intent)
                             (context as? ComponentActivity)?.finish()

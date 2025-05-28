@@ -19,7 +19,8 @@ import com.example.medicina.model.*
         Account::class,
         Designation::class
     ],
-    version = 12)
+    version = 16
+)
 
 @TypeConverters(Converters::class)
 abstract class MedicinaDatabase: RoomDatabase() {

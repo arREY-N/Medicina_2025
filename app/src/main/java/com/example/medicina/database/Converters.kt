@@ -2,14 +2,25 @@ package com.example.medicina.database
 
 import androidx.room.TypeConverter
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class Converters {
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE
+    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     @TypeConverter
-    fun fromLocalDate(date: LocalDate?): String? {
-        return date?.format(formatter)
+    fun fromLocalDateTime(dateTime: LocalDateTime?): String? {
+        return dateTime?.format(formatter)
+    }
+
+    @TypeConverter
+    fun toLocalDateTime(dateTimeString: String?): LocalDateTime? {
+        return dateTimeString?.let { LocalDateTime.parse(it, formatter) }
+    }
+
+    @TypeConverter
+    fun fromLocalDate(dateString: LocalDate?): String? {
+        return dateString?.format(formatter)
     }
 
     @TypeConverter

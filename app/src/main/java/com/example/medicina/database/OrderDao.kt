@@ -18,7 +18,7 @@ interface OrderDao {
     suspend fun getOrderById(id: Int): Order?
 
     @Query("Select * FROM orders WHERE medicineId = :id")
-    suspend fun getOrdersByMedicine(id: Int): List<Order>
+    fun getOrdersByMedicine(id: Int): Flow<List<Order>>
 
     @Query("SELECT * FROM orders WHERE supplierId = :id")
     suspend fun getOrdersBySupplier(id: Int): List<Order>

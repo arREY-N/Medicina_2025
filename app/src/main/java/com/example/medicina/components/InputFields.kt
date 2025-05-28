@@ -52,6 +52,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.collectAsState
 import com.example.medicina.functions.AccountFunctions
 import com.example.medicina.model.Generic
@@ -124,9 +125,8 @@ fun InputField(
                     keyboardOptions = keyboardOptions,
                     visualTransformation = visualTransformation,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .onFocusChanged { focusState -> isFocused = focusState.isFocused }
-                        .padding(top = textPadding.calculateTopPadding()),
+                        .weight(1f)
+                        .onFocusChanged { focusState -> isFocused = focusState.isFocused },
                     value = inputValue,
                     onValueChange = { if(editable) onValueChange(it) },
                     singleLine = !isMultiline,

@@ -37,6 +37,7 @@ import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.viewmodel.InventoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
+import com.example.medicina.viewmodel.NotificationViewModel
 import com.example.medicina.viewmodel.OrderViewModel
 import com.example.medicina.viewmodel.SupplierViewModel
 import kotlinx.coroutines.launch
@@ -77,7 +78,8 @@ fun ViewSuppliers(
         if(suppliers.isNotEmpty()){
             items(suppliers) { supplier ->
                 InfoPills(
-                    infoColor = CustomRed,
+                    infoColor = listOf(CustomGray),
+                    current = 0,
                     modifier = Modifier.fillMaxWidth(),
                     content = {
                         SupplierPillText(
@@ -133,8 +135,7 @@ fun ViewSupplier(
     val isPermitted = UserSession.designationID != 3
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(top = Global.edgeMargin),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
@@ -157,15 +158,16 @@ fun ViewSupplier(
             items(orders) { order ->
                 val orderedItem = medicines[order.medicineId]?.copy()
                 val orderSupplier = supplier[order.supplierId]?.copy()
+                val expireDate = order.expirationDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
                 InfoPills(
-                    infoColor = CustomRed,
+                    infoColor = listOf(CustomRed),
                     modifier = Modifier.fillMaxWidth(),
                     content = {
                         OrderPillText(
                             orderedItem = orderedItem?.brandName ?: "",
                             supplier = orderSupplier?.name ?: "",
-                            date = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
-                            quantity = order.quantity,
+                            date = expireDate,
+                            quantity = order.quantity.toString(),
                             price = String.format(Locale.US, "%.2f", order.price)
                         )
                     },
@@ -199,6 +201,7 @@ fun ViewSupplier(
 fun UpsertSuppliersScreen(
     supplierID: Int? = -1,
     supplierViewModel: SupplierViewModel,
+    notificationViewModel: NotificationViewModel,
     navController: NavController
 ){
     val coroutineScope = rememberCoroutineScope()
@@ -265,6 +268,25 @@ fun UpsertSuppliersScreen(
                             supplierViewModel.getSupplierById(id)
                             val savedSupplier = supplierViewModel.upsertSupplier
                             Toast.makeText(context, "Supplier saved: ${savedSupplier.value.name}", Toast.LENGTH_SHORT).show()
+
+                            if(isEditing){
+                                notificationViewModel.addNotification(
+                                    banner = "A supplier entry was edited!",
+                                    message = "${supplier.name} was edited!",
+                                    overview = "Supplier edited",
+                                    action = "EDITED",
+                                    source = UserSession.username,
+                                )
+                            } else {
+                                notificationViewModel.addNotification(
+                                    banner = "A supplier entry was added!",
+                                    message = "${supplier.name} was added!",
+                                    overview = "Supplier added",
+                                    action = "ADDED",
+                                    source = UserSession.username,
+                                )
+                            }
+
                             supplierViewModel.reset()
                             navController.popBackStack()
                         } catch (e: MedicinaException){
@@ -273,17 +295,23 @@ fun UpsertSuppliersScreen(
                     }
                 },
                 cancelOnclick = {
-                    println("DELETE CLICKED")
                     coroutineScope.launch{
                         println("DELETE ONGOING!")
-                        supplierViewModel.delete()
-                        supplierViewModel.reset()
                         if (isEditing){
+                            notificationViewModel.addNotification(
+                                banner = "A supplier entry was deleted!",
+                                message = "${supplier.name} was deleted!",
+                                overview = "Supplier deleted",
+                                action = "DELETED",
+                                source = UserSession.username,
+                            )
                             navController.navigate(Screen.Suppliers.route){
                                 popUpTo(Screen.Suppliers.route) {
                                     inclusive = true
                                 }
                             }
+                            supplierViewModel.delete()
+                            supplierViewModel.reset()
                         } else {
                             navController.popBackStack()
                         }

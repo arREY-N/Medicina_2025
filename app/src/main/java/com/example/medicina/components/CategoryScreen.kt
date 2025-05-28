@@ -29,7 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.core.graphics.toColorInt
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import com.example.medicina.functions.MedicinaException
 import com.example.medicina.model.UserSession
 import com.example.medicina.ui.theme.CustomBlack
@@ -40,15 +42,19 @@ import com.example.medicina.viewmodel.CategoryViewModel
 import com.example.medicina.viewmodel.GenericViewModel
 import com.example.medicina.viewmodel.MedicineCategoryViewModel
 import com.example.medicina.viewmodel.MedicineViewModel
+import com.example.medicina.viewmodel.NotificationViewModel
 import com.example.medicina.viewmodel.OrderViewModel
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.Locale
 
 @Composable
 fun UpsertCategoryScreen(
     categoryID: Int? = null,
     categoryViewModel: CategoryViewModel,
-    navController: NavController
+    notificationViewModel: NotificationViewModel,
+    navController: NavHostController
 ){
     var isEditing by remember { mutableStateOf(false) }
     val isPermitted = UserSession.designationID != 3
@@ -129,15 +135,24 @@ fun UpsertCategoryScreen(
                             Toast.makeText(context, "Category saved: ${savedCategory.value.categoryName}", Toast.LENGTH_SHORT).show()
 
                             if(isEditing){
+                                notificationViewModel.addNotification(
+                                    banner = "A medicine category was edited!",
+                                    message = "${upsertCategory.categoryName} was edited!",
+                                    overview = "Category edited",
+                                    action = "EDITED",
+                                    source = UserSession.username,
+                                )
                                 navController.popBackStack()
                             } else {
-                                navController.navigate(Screen.Categories.route){
-                                    popUpTo(Screen.Categories.route){
-                                        inclusive = true
-                                    }
-                                }
+                                notificationViewModel.addNotification(
+                                    banner = "A new medicine category was added!",
+                                    message = "${upsertCategory.categoryName} was added!",
+                                    overview = "Category Added",
+                                    action = "ADDED",
+                                    source = UserSession.username,
+                                )
+                                navController.navigateMenuTab(Screen.Categories.route)
                             }
-
                             categoryViewModel.reset()
                         } catch (e: MedicinaException){
                             Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
@@ -150,11 +165,14 @@ fun UpsertCategoryScreen(
                             if(!isPermitted){
                                 Toast.makeText(context, "Must be an admin to delete categories", Toast.LENGTH_SHORT).show()
                             } else {
-                                navController.navigate(Screen.Categories.route){
-                                    popUpTo(Screen.Categories.route) {
-                                        inclusive = true
-                                    }
-                                }
+                                notificationViewModel.addNotification(
+                                    banner = "A new medicine category was added!",
+                                    message = "${upsertCategory.categoryName} was deleted!",
+                                    overview = "Category Deleted",
+                                    action = "DELETED",
+                                    source = UserSession.username,
+                                )
+                                navController.navigateMenuTab(Screen.Categories.route)
                                 categoryViewModel.delete()
                                 categoryViewModel.reset()
                             }
@@ -204,7 +222,7 @@ fun CategoriesScreen(
         if(categories.isNotEmpty()){
             items(categories){ category ->
                 InfoPills(
-                    infoColor = Color(android.graphics.Color.parseColor(category.hexColor)),
+                    infoColor = listOf(Color(android.graphics.Color.parseColor(category.hexColor))),
                     modifier = Modifier.fillMaxWidth(),
                     content = {
                         CategoryPillText(
@@ -285,16 +303,20 @@ fun CategoryMedicine(
 
         if (categoryMedicine.isNotEmpty()) {
             items(categoryMedicine) { medicine ->
-                var quantity = 0
-                LaunchedEffect(medicine.id) {
-                    medicine.id?.let{
-                        quantity = orderViewModel.getTotalQuantity(medicine.id)
-                    }
-                }
+
+                val quantity by medicine.id?.let {
+                    orderViewModel.getTotalQuantity(it).collectAsState()
+                } ?: remember { mutableStateOf(0) }
+
+                val categories by medicine.id?.let {
+                    medicineCategoryViewModel.getCategoriesById(it).collectAsState(initial = emptyList())
+                } ?: remember { mutableStateOf(emptyList()) }
+
+                val infoColor = categories.map { Color(it.hexColor.toColorInt()) }
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = Color(android.graphics.Color.parseColor(medicineViewModel.getMedicineColor(categoryId))),
+                    infoColor = infoColor,
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,

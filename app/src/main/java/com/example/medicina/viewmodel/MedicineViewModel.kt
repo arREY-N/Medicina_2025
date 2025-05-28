@@ -18,11 +18,13 @@ import kotlinx.coroutines.launch
 class MedicineViewModel : ViewModel() {
     private val repository = Repository
 
-    private val _medicines: StateFlow<List<Medicine>> = repository.getAllMedicines().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = emptyList()
-    )
+    private val _medicines: StateFlow<List<Medicine>> = repository.getAllMedicines()
+        .map{ list -> list.sortedBy { it.brandName.lowercase() } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
     val medicines: StateFlow<List<Medicine>> = _medicines
 

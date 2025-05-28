@@ -36,7 +36,9 @@ import com.example.medicina.ui.theme.CustomWhite
 @Composable
 fun InfoPills(
     modifier: Modifier = Modifier,
-    infoColor: Color = CustomGreen,
+    infoColor: List<Color> = listOf(CustomGreen, CustomGreen),
+    current: Int = 1,
+    max: Int = 1,
     isClicked: Boolean = false,
     context: Context = LocalContext.current,
     onClickAction: () -> Unit = {
@@ -70,19 +72,53 @@ fun InfoPills(
         onClick = onClickAction,
         contentPadding = PaddingValues(0.dp)
     ) {
+
+        val colorNumber = infoColor.size
+
         Row(
             modifier = Modifier
                 .height(IntrinsicSize.Min)
                 .fillMaxWidth()
         ){
             Surface(
-                color = infoColor,
+                color = CustomWhite,
                 shape = RoundedCornerShape(15.dp),
                 modifier = Modifier
                     .padding(10.dp)
                     .width(10.dp)
                     .fillMaxHeight()
-            ) { }
+                    .border(
+                        width = 1.dp,
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (infoColor.size == 1) infoColor[0] else Color.Transparent
+                    )
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = if (infoColor.size == 1) Arrangement.Bottom else Arrangement.SpaceEvenly
+                ) {
+                    if (infoColor.size == 1) {
+                        val heightFraction = (current.toFloat() / max).coerceIn(0f, 1f)
+                        Surface(
+                            color = infoColor[0],
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(heightFraction)
+                        ) { }
+                    } else {
+                        infoColor.forEach { color ->
+                            Surface(
+                                color = color,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            ) { }
+                        }
+                    }
+                }
+            }
+
+
             Column(
                 modifier = Modifier
                     .padding(top = 12.dp, bottom = 12.dp, end  = 12.dp),
@@ -97,24 +133,18 @@ fun InfoPills(
 
 @Composable
 fun NotificationPillText(
-    title: String = "Notification Title",
-    subtitle: String = "Notification Subtitle",
-    details: String = "Notification Details"){
+    overview: String = "Notidfication Overview",
+    date: String = "Notification Date"
+){
     Column(modifier = Modifier){
         Text(
-            text = title,
+            text = overview,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = CustomBlack
         )
 
-        Text(text = subtitle,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color = CustomBlack
-        )
-
-        Text(text = details,
+        Text(text = date,
             fontSize = 14.sp,
             fontWeight = FontWeight.Light,
             color = CustomBlack
@@ -172,7 +202,6 @@ fun InventoryPillText(
     }
 }
 
-
 @Composable
 fun CategoryPillText(
     categoryName: String = "Brand Name",
@@ -199,6 +228,41 @@ fun CategoryPillText(
             )
             Text(
                 text = "Medicines: $medicineNumber",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                color = CustomBlack
+            )
+        }
+    }
+}
+
+
+@Composable
+fun AccountPillText(
+    name: String = "NAME",
+    username: String = "USERNAME",
+    designation: String = "DESIGNATION"
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+    ) {
+        Column(modifier = Modifier.weight(1f)){
+            Text(
+                text = name,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = CustomBlack
+            )
+            Text(
+                text = username,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                color = CustomBlack
+            )
+            Text(
+                text = designation,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Light,
                 color = CustomBlack
@@ -239,7 +303,7 @@ fun OrderPillText(
     orderedItem: String = "Ordered Item",
     supplier: String = "Supplier Name",
     date: String = "Order date",
-    quantity: Int = 0,
+    quantity: String = "-/-",
     price: String = "0.00"
 ){
     Column(){
@@ -265,7 +329,7 @@ fun OrderPillText(
                 )
 
                 Text(
-                    text = date,
+                    text = "Exp: $date",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = CustomBlack
@@ -275,10 +339,11 @@ fun OrderPillText(
                 modifier = Modifier
                     .fillMaxSize()
                     .weight(1f),
-                verticalArrangement = Arrangement.Bottom
+                verticalArrangement = Arrangement.Bottom,
+                horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "Qty: ${quantity.toString()}",
+                    text = "Qty: $quantity",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Light,
                     color = CustomBlack

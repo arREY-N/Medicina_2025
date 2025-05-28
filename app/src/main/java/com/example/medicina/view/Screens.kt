@@ -124,7 +124,12 @@ import com.example.medicina.components.PageHeader
 import com.example.medicina.components.navigateBottomTab
 import com.example.medicina.components.navigateMenuTab
 import androidx.navigation.NavHostController
+import com.example.medicina.components.OrdersPage
 import com.example.medicina.components.SupplierPillText
+import androidx.lifecycle.viewModelScope
+import androidx.core.graphics.toColorInt
+import com.example.medicina.ui.theme.CustomYellow
+import com.example.medicina.ui.theme.GrayBack
 
 @Composable
 fun ScreenContainer(
@@ -237,8 +242,11 @@ fun MainScreen(){
                         .padding(start = 12.dp, end = 12.dp, bottom = 12.dp)
                 ) {
                     UIButton(
+
                         "Log Out",
                         onClickAction = {
+                            accountViewModel.clearLoginState(context)
+
                             val intent = Intent(context, MainActivity::class.java)
                             context.startActivity(intent)
                             (context as Activity).finish()
@@ -310,10 +318,9 @@ fun MainScreen(){
                         InventoryPage(
                             navController,
                             inventoryViewModel,
-                            genericViewModel,
                             orderViewModel,
-                            medicineViewModel,
-                            brandedGenericViewModel
+                            brandedGenericViewModel,
+                            medicineCategoryViewModel
                         )
                     }
                 }
@@ -416,7 +423,7 @@ fun MainScreen(){
                         categoryViewModel,
                         brandedGenericViewModel,
                         medicineCategoryViewModel,
-                        genericViewModel,
+                        notificationViewModel,
                         navController
                     )
                 }
@@ -460,6 +467,7 @@ fun MainScreen(){
                         orderViewModel,
                         inventoryViewModel,
                         supplierViewModel,
+                        notificationViewModel,
                         navController
                     )
                 }
@@ -474,7 +482,14 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val categoryID = backStackEntry.arguments?.getInt("categoryID") ?: 0
 
-                ScreenContainer{ UpsertCategoryScreen(categoryID, categoryViewModel, navController) }
+                ScreenContainer{
+                    UpsertCategoryScreen(
+                        categoryID,
+                        categoryViewModel,
+                        notificationViewModel,
+                        navController
+                    )
+                }
             }
 
             composable(
@@ -508,7 +523,14 @@ fun MainScreen(){
             ) { backStackEntry ->
                 val supplierID = backStackEntry.arguments?.getInt("supplierID") ?: -1
 
-                ScreenContainer{ UpsertSuppliersScreen(supplierID, supplierViewModel, navController) }
+                ScreenContainer{
+                    UpsertSuppliersScreen(
+                        supplierID,
+                        supplierViewModel,
+                        notificationViewModel,
+                        navController
+                    )
+                }
             }
 
             composable(
@@ -536,6 +558,7 @@ fun MainScreen(){
                     UpsertGenericScreen(
                         genericID,
                         genericViewModel,
+                        notificationViewModel,
                         navController
                     )
                 }
@@ -571,7 +594,7 @@ fun Home(
     navController: NavHostController,
     searchViewModel: SearchViewModel,
     categoryViewModel: CategoryViewModel,
-    notificationViewModel: NotificationViewModel
+    notificationViewModel: NotificationViewModel,
 ) {
     val context = LocalContext.current
     val searchItem by searchViewModel.searchItem.collectAsState()
@@ -580,7 +603,9 @@ fun Home(
     val categoriesList by categoryViewModel.categories.collectAsState()
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().imePadding()
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding()
     ) {
         item {
             Box(
@@ -672,6 +697,7 @@ fun Home(
                     ) {
                         categoriesList.take(4).forEach { category ->
                             ButtonBox(
+                                iconId = R.drawable.med_category,
                                 text = category.categoryName,
                                 onClickAction = {
                                     val id = category.id
@@ -694,9 +720,7 @@ fun Home(
                         "Add New Category",
                         inheritedModifier = Modifier.fillMaxWidth(),
                         onclick = {
-                            navController.navigate(Screen.UpsertCategory.createRoute(-1)) {
-                                launchSingleTop = true
-                            }
+                            navController.navigateMenuTab(Screen.UpsertCategory.createRoute(-1))
                         }
                     )
                     Spacing(8.dp)
@@ -732,7 +756,7 @@ fun Home(
                                 end.linkTo(guidelines.c4end)
                             }
                             .clickable {
-                                navController.navigate(Screen.Notifications.route){
+                                navController.navigate(Screen.Notifications.route) {
                                     launchSingleTop = false
                                 }
                             },
@@ -752,12 +776,11 @@ fun Home(
                             InfoPills(
                                 modifier = Modifier
                                     .fillMaxWidth(),
-                                infoColor = CustomRed,
+                                infoColor = listOf(CustomRed),
                                 content = {
                                     NotificationPillText(
-                                        title = notification.notificationBanner,
-                                        subtitle = notification.notificationMessage,
-                                        details = notification.notificationOverview
+                                        overview = notification.notificationOverview,
+                                        date = notification.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy hh:mm a"))
                                     )
                                 },
                                 onClickAction = {
@@ -792,7 +815,7 @@ fun SearchPage(
     navController: NavController,
     searchViewModel: SearchViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
-    orderViewModel: OrderViewModel
+    orderViewModel: OrderViewModel,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -820,7 +843,10 @@ fun SearchPage(
                 InputField(
                     inputHint = "Looking for a medicine?",
                     inputValue = searchItem,
-                    onValueChange = { newValue -> searchViewModel.updateSearchItem(newValue) },
+                    onValueChange = { newValue ->
+                        searchViewModel.updateSearchItem(newValue)
+                        searchViewModel.performSearch()
+                    },
                     modifier = Modifier.constrainAs(searchField) {
                         top.linkTo(parent.top, margin = -16.dp)
                         start.linkTo(parent.start)
@@ -847,19 +873,22 @@ fun SearchPage(
 
         if (searchResults.isNotEmpty()) {
             items(searchResults) { medicine ->
-                var orderQuantity = 0
                 LaunchedEffect(medicine.id) {
-                    orderQuantity = orderViewModel.getTotalQuantity(medicine.id ?: -1)
+                    orderViewModel.getTotalQuantity(medicine.id ?: -1)
                 }
+
+                val quantity = medicine.id?.let{ id ->
+                    orderViewModel.getTotalQuantity(id).collectAsState().value
+                } ?: 0
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomRed,
+                    infoColor = listOf(CustomRed),
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
                             genericName = brandedGenericViewModel.getGenericNamesText(medicine.id!!),
-                            quantity = orderQuantity.toString(),
+                            quantity = quantity.toString(),
                             price = String.format(Locale.US, "%.2f", medicine.price)
                         )
                     },
@@ -867,6 +896,21 @@ fun SearchPage(
                         navController.navigate(Screen.ViewMedicine.createRoute(medicine.id!!))
                     }
                 )
+            }
+        } else {
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacing(80.dp)
+                    Text(
+                        text = "No Search Results",
+                        color = CustomGray,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
             }
         }
 
@@ -1022,7 +1066,7 @@ fun MenuScreen(navController: NavHostController){
 @Composable
 fun NotificationsPage(
     navController: NavController,
-    notificationViewModel: NotificationViewModel
+    notificationViewModel: NotificationViewModel,
 ){
     val notifications by notificationViewModel.notifications.collectAsState()
 
@@ -1037,15 +1081,28 @@ fun NotificationsPage(
         }
         if (notifications.isNotEmpty()) {
             items(notifications) { notification ->
+                val color =
+                    when (notification.action) {
+                        "ADDED" -> {
+                            CustomGreen
+                        }
+                        "UPDATED" -> {
+                            CustomYellow
+                        }
+                        else -> {
+                            CustomRed
+                        }
+                    }
+
+
                 InfoPills(
                     modifier = Modifier
                         .fillMaxWidth(),
-                    infoColor = CustomRed,
+                    infoColor = listOf(color),
                     content = {
                         NotificationPillText(
-                            title = notification.notificationBanner,
-                            subtitle = notification.notificationMessage,
-                            details = notification.notificationOverview
+                            overview = notification.notificationOverview,
+                            date = notification.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
                         )
                     },
                     onClickAction = {
@@ -1079,7 +1136,7 @@ fun NotificationsPage(
 @Composable
 fun Notification(
     notificationId: Int,
-    notificationViewModel: NotificationViewModel
+    notificationViewModel: NotificationViewModel,
 ){
     val notificationData by notificationViewModel.notificationData.collectAsState()
 
@@ -1097,15 +1154,16 @@ fun Notification(
     ) {
         item{
             Text(
-                notificationData.notificationBanner,
+                notificationData.notificationOverview,
                 fontSize = 32.sp,
+                lineHeight = 10.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = CustomBlack
             )
         }
         item{
             Text(
-                notificationData.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy")),
+                text = "${notificationData.source}  |  ${notificationData.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}",
                 color = CustomBlack
             )
             Spacing(8.dp)
@@ -1126,10 +1184,9 @@ fun Notification(
 fun InventoryPage(
     navController: NavController,
     viewModel: InventoryViewModel,
-    genericViewModel: GenericViewModel,
     orderViewModel: OrderViewModel,
-    medicineViewModel: MedicineViewModel,
-    brandedGenericViewModel: BrandedGenericViewModel
+    brandedGenericViewModel: BrandedGenericViewModel,
+    medicineCategoryViewModel: MedicineCategoryViewModel
 ) {
     val medicines by viewModel.medicines.collectAsState()
 
@@ -1155,14 +1212,20 @@ fun InventoryPage(
 
         if (medicines.isNotEmpty()) {
             items(medicines) { medicine ->
-                var quantity = 0
-                LaunchedEffect(medicine.id) {
-                    quantity = orderViewModel.getTotalQuantity(medicine.id ?: -1)
-                }
+                val quantity by medicine.id?.let {
+                    orderViewModel.getTotalQuantity(it).collectAsState()
+                } ?: remember { mutableStateOf(0) }
+
+                val categories by medicine.id?.let {
+                    medicineCategoryViewModel.getCategoriesById(it).collectAsState(initial = emptyList())
+                } ?: remember { mutableStateOf(emptyList()) }
+
+                val infoColor = categories.map { Color(it.hexColor.toColorInt()) }
+
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = CustomGreen, // Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(medicine.categoryId))),
+                    infoColor = infoColor,
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
@@ -1201,94 +1264,10 @@ fun InventoryPage(
 }
 
 @Composable
-fun OrdersPage(
-    navController: NavController,
-    orderViewModel: OrderViewModel,
-    inventoryViewModel: InventoryViewModel,
-    supplierViewModel: SupplierViewModel,
-    medicineViewModel: MedicineViewModel
-){
-    val orders by orderViewModel.orders.collectAsState()
-    val medicines by inventoryViewModel.medicineMap.collectAsState()
-    val suppliers by supplierViewModel.supplierMap.collectAsState()
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item{
-            PageHeader(
-                title = "Orders"
-            )
-        }
-
-        if(UserSession.designationID != 3){
-            item{
-                CreateButton(
-                    "Add New Order",
-                    inheritedModifier = Modifier.fillMaxWidth(),
-                    onclick = {
-                        navController.navigate(Screen.UpsertOrder.createRoute(-1))
-                    }
-                )
-            }
-        }
-
-        if(orders.isNotEmpty()) {
-            items(orders) { order ->
-                val orderedItem = medicines[order.medicineId]?.copy()
-                val supplier = suppliers[order.supplierId]?.copy()
-                val orderDate = order.orderDate.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
-                if (orderedItem != null) {
-                    InfoPills(
-                        modifier = Modifier.fillMaxWidth(),
-                        infoColor = Color(AndroidColor.parseColor(medicineViewModel.getMedicineColor(orderedItem.id!!))),
-                        content = {
-                            OrderPillText(
-                                orderedItem = orderedItem.brandName ?: "",
-                                supplier = supplier?.name ?: "",
-                                date = orderDate,
-                                quantity = order.quantity,
-                                price = String.format(Locale.US, "%.2f", order.price)
-                            )
-                        },
-                        onClickAction = {
-                            order.id?.let{
-                                navController.navigate(Screen.UpsertOrder.createRoute(order.id))
-                            }
-                        }
-                    )
-                }
-            }
-        } else {
-            item{
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Spacing(80.dp)
-                    Text(
-                        text = "No Order History",
-                        color = CustomGray,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                }
-            }
-        }
-
-        item{
-            Spacing(Global.edgeMargin)
-        }
-    }
-}
-
-@Composable
 fun GenericsScreen(
     navController: NavController,
     genericViewModel: GenericViewModel,
-    brandedGenericViewModel: BrandedGenericViewModel
+    brandedGenericViewModel: BrandedGenericViewModel,
 ){
     val generics by genericViewModel.generics.collectAsState()
 
@@ -1316,8 +1295,9 @@ fun GenericsScreen(
         if(generics.isNotEmpty()){
             items(generics){ generic ->
                 InfoPills(
-                    infoColor = Color(android.graphics.Color.parseColor("#123456")),
+                    infoColor = listOf(CustomGray),
                     modifier = Modifier.fillMaxWidth(),
+                    current = 0,
                     content = {
                         SupplierPillText(
                             supplierName = generic.genericName,

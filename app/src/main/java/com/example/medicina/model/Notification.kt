@@ -3,6 +3,7 @@ package com.example.medicina.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.time.LocalDate
+import java.time.LocalDateTime
 
 @Entity(tableName = "notifications")
 data class Notification(
@@ -10,6 +11,7 @@ data class Notification(
     val notificationBanner: String = "",
     val notificationMessage: String = "",
     val notificationOverview: String = "",
-    val date: LocalDate = LocalDate.now(),
-    val color: String = "#123456"
+    val date: LocalDateTime = LocalDateTime.now(),
+    val source: String = "",
+    val action: String = ""
 )

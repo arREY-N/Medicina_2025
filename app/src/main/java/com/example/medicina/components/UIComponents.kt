@@ -1,6 +1,7 @@
 package com.example.medicina.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +31,7 @@ import androidx.constraintlayout.compose.Dimension
 import com.example.medicina.components.LayoutGuidelines.setupColumnGuidelines
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.NavController
+import com.example.medicina.R
 import com.example.medicina.model.Order
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -161,8 +165,15 @@ fun MedicineOverview(
                     width = Dimension.fillToConstraints
                     height = Dimension.ratio("1:1")
                 },
-            color = Color(AndroidColor.parseColor(iconColor))
-        ) {}
+            color = CustomWhite
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon_green),
+                contentDescription = "Pill Icon",
+                modifier = Modifier.size(50.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
 
         Row(
             modifier = Modifier
@@ -201,20 +212,23 @@ fun MedicineOverview(
                         text = "P $price",
                         fontSize = 14.sp,
                         color = CustomBlack,
-                        fontWeight = FontWeight.Light
+                        fontWeight = FontWeight.Light,
+                        textAlign = TextAlign.End
                     )
                 }
                 Text(
                     text = category,
                     fontSize = 14.sp,
                     color = CustomBlack,
-                    fontWeight = FontWeight.Light
+                    fontWeight = FontWeight.Light,
+                    textAlign = TextAlign.End
                 )
                 Text(
                     text = regulation,
                     fontSize = 14.sp,
                     color = CustomBlack,
-                    fontWeight = FontWeight.Light
+                    fontWeight = FontWeight.Light,
+                    textAlign = TextAlign.End
                 )
             }
         }

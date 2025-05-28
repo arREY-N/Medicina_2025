@@ -27,11 +27,13 @@ class GenericViewModel: ViewModel() {
     private val _upsertGeneric = MutableStateFlow(Generic())
     val upsertGeneric: StateFlow<Generic> = _upsertGeneric
 
-    val generics = repository.getAllGenerics().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        initialValue = emptyList()
-    )
+    val generics = repository.getAllGenerics()
+        .map{ list -> list.sortedBy { it.genericName.lowercase() } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
     fun getGenericById(genericId: Int){
         viewModelScope.launch {
