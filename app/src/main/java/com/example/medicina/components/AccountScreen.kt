@@ -1,5 +1,6 @@
 package com.example.medicina.components
 
+import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.ui.theme.SuperAdmin
 import com.example.medicina.ui.theme.User
 import com.example.medicina.view.Homepage
+import com.example.medicina.view.MainActivity
 import com.example.medicina.viewmodel.AccountViewModel
 
 @Composable
@@ -282,6 +284,24 @@ fun AccountScreen(
                             Toast.makeText(context, "${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
+                },
+            )
+        }
+
+        item{
+            Spacing(8.dp)
+            DeleteButton(
+                isCTA = false,
+                text = "DELETE",
+                onEdit = {
+                    accountViewModel.clearLoginState(context)
+
+                    accountViewModel.deleteAccount(account.id)
+                    Toast.makeText(context, "Account deleted", Toast.LENGTH_SHORT).show()
+
+                    val intent = Intent(context, MainActivity::class.java)
+                    context.startActivity(intent)
+                    (context as Activity).finish()
                 },
             )
         }

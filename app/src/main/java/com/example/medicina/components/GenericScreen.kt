@@ -183,8 +183,7 @@ fun ReadGeneric(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(vertical = Global.edgeMargin),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item{
@@ -229,6 +228,9 @@ fun ReadGeneric(
                     }
                 )
             }
+        }
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }

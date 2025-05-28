@@ -52,6 +52,7 @@ import androidx.navigation.NavController
 import com.example.medicina.ui.theme.CustomBlack
 import com.example.medicina.ui.theme.CustomGray
 import com.example.medicina.ui.theme.CustomGreen
+import com.example.medicina.ui.theme.CustomRed
 import com.example.medicina.ui.theme.CustomWhite
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -63,6 +64,7 @@ fun UIButton(
     modifier: Modifier = Modifier,
     onClickAction: () -> Unit = {},
     isCTA: Boolean = true,
+    isDelete: Boolean = false,
     height: Dp = 40.dp
 ) {
     Button (
@@ -70,6 +72,11 @@ fun UIButton(
             if (isCTA) {
                 ButtonDefaults.buttonColors(
                     containerColor = CustomGreen,
+                    contentColor = CustomWhite
+                )
+            } else if (isDelete){
+                ButtonDefaults.buttonColors(
+                    containerColor = CustomRed,
                     contentColor = CustomWhite
                 )
             } else {
@@ -82,7 +89,7 @@ fun UIButton(
             .border(
                 width = 1.dp,
                 shape = RoundedCornerShape(20.dp),
-                color = CustomGreen
+                color = if(isDelete) CustomRed else CustomGreen
             )
             .height(height)
             .then(modifier),
@@ -185,6 +192,40 @@ fun EditButton(
                 onClickAction = { onEdit() },
                 isCTA = isCTA,
                 height = 40.dp
+            )
+        }
+    }
+}
+
+@Composable
+fun DeleteButton(
+    text: String = "Delete",
+    onEdit: () -> Unit = {},
+    isCTA: Boolean = true,
+    isDelete: Boolean = true
+){
+    ConstraintLayout(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        val (editButton) = createRefs()
+
+        Surface(
+            modifier = Modifier
+                .constrainAs(editButton) {
+                    top.linkTo(parent.top)
+                    start.linkTo(parent.start)
+                }
+                .fillMaxWidth(),
+            color = Color.Transparent,
+            shape = RoundedCornerShape(50.dp)
+        ) {
+            UIButton(
+                text = "Delete",
+                modifier =  Modifier.fillMaxSize(),
+                onClickAction = { onEdit() },
+                isCTA = isCTA,
+                height = 40.dp,
+                isDelete = isDelete
             )
         }
     }

@@ -73,6 +73,12 @@ class AccountViewModel : ViewModel() {
         }
     }
 
+    fun deleteAccount(accountId: Int?){
+        viewModelScope.launch {
+            accountId?.let { repository.deleteAccount(it) }
+        }
+    }
+
     fun saveAccount() {
         viewModelScope.launch {
             if(_editAccount.value.designationID == null){

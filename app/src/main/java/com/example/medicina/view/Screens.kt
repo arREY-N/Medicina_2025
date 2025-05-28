@@ -308,7 +308,8 @@ fun MainScreen(){
                             navController,
                             searchViewModel,
                             brandedGenericViewModel,
-                            orderViewModel
+                            orderViewModel,
+                            medicineCategoryViewModel
                         )
                     }
                 }
@@ -773,10 +774,24 @@ fun Home(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ){
                         notificationsList.take(5).forEach { notification ->
+                            val color =
+                                when (notification.action) {
+                                    "ADDED" -> {
+                                        CustomGreen
+                                    }
+                                    "UPDATED" -> {
+                                        CustomYellow
+                                    }
+                                    else -> {
+                                        CustomRed
+                                    }
+                                }
+
+
                             InfoPills(
                                 modifier = Modifier
                                     .fillMaxWidth(),
-                                infoColor = listOf(CustomRed),
+                                infoColor = listOf(color),
                                 content = {
                                     NotificationPillText(
                                         overview = notification.notificationOverview,
@@ -816,6 +831,7 @@ fun SearchPage(
     searchViewModel: SearchViewModel,
     brandedGenericViewModel: BrandedGenericViewModel,
     orderViewModel: OrderViewModel,
+    medicineCategoryViewModel: MedicineCategoryViewModel
 ) {
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -873,17 +889,19 @@ fun SearchPage(
 
         if (searchResults.isNotEmpty()) {
             items(searchResults) { medicine ->
-                LaunchedEffect(medicine.id) {
-                    orderViewModel.getTotalQuantity(medicine.id ?: -1)
-                }
+                val quantity by medicine.id?.let {
+                    orderViewModel.getTotalQuantity(it).collectAsState()
+                } ?: remember { mutableStateOf(0) }
 
-                val quantity = medicine.id?.let{ id ->
-                    orderViewModel.getTotalQuantity(id).collectAsState().value
-                } ?: 0
+                val categories by medicine.id?.let {
+                    medicineCategoryViewModel.getCategoriesById(it).collectAsState(initial = emptyList())
+                } ?: remember { mutableStateOf(emptyList()) }
+
+                val infoColor = categories.map { Color(it.hexColor.toColorInt()) }
 
                 InfoPills(
                     modifier = Modifier.fillMaxWidth(),
-                    infoColor = listOf(CustomRed),
+                    infoColor = infoColor,
                     content = {
                         InventoryPillText(
                             brandName = medicine.brandName,
@@ -1102,7 +1120,7 @@ fun NotificationsPage(
                     content = {
                         NotificationPillText(
                             overview = notification.notificationOverview,
-                            date = notification.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))
+                            date = notification.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy hh:mm a"))
                         )
                     },
                     onClickAction = {
@@ -1163,7 +1181,7 @@ fun Notification(
         }
         item{
             Text(
-                text = "${notificationData.source}  |  ${notificationData.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy"))}",
+                text = "${notificationData.source}  |  ${notificationData.date.format(DateTimeFormatter.ofPattern("MMM d, yyyy hh:mm a"))}",
                 color = CustomBlack
             )
             Spacing(8.dp)
@@ -1273,8 +1291,7 @@ fun GenericsScreen(
 
     LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(top = Global.edgeMargin),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ){
         item{
@@ -1324,6 +1341,9 @@ fun GenericsScreen(
                     )
                 }
             }
+        }
+        item{
+            Spacing(Global.edgeMargin)
         }
     }
 }

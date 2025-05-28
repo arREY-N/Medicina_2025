@@ -16,6 +16,13 @@ import kotlinx.coroutines.launch
 class SearchViewModel: ViewModel() {
     private val repository = Repository
 
+    private val brandedGenerics = repository.getAllBrandedGenerics()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
+
     private val medicines = repository.getAllMedicines()
         .stateIn(
             scope = viewModelScope,
@@ -63,14 +70,19 @@ class SearchViewModel: ViewModel() {
     }
 
     private fun getMedicinesByName(searchKey: String) : List<Medicine> {
-
         val name = searchKey.trim()
+
+        println("search key: $name")
 
         val medicineList: MutableSet<List<Medicine>> = mutableSetOf()
 
         val genericsList = generics.value
             .filter{ it.genericName.contains(name, ignoreCase = true) }
             .map{ it.id }
+
+        val genericBrandedList = brandedGenerics.value
+            .filter { it.genericId in genericsList }
+            .map{ it.medicineId }
 
         val brandList = medicines.value
             .filter{ it.brandName.contains(name, ignoreCase = true) }
@@ -79,7 +91,7 @@ class SearchViewModel: ViewModel() {
             .filter { it.description.contains(name, ignoreCase = true) }
             .map{ it.id }
 
-        val matchIds = descriptionList + genericsList
+        val matchIds = descriptionList + genericBrandedList
 
         val filteredMedicines = medicines.value.filter {
             it.id in matchIds
