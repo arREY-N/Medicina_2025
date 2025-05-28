@@ -88,27 +88,55 @@ object Repository {
     }
 
     fun getAllMedicines(): Flow<List<Medicine>> = flow {
+        var medicinesFromApi: List<Medicine>? = null
         try {
-            // MedicineFunctions.getAllMedicines() is a blocking network call,
-            // so it must be run on a background thread.
-            val medicinesFromApi = withContext(Dispatchers.IO) {
+            Log.d("Repository", "getAllMedicines: Attempting to fetch from API.")
+            medicinesFromApi = withContext(Dispatchers.IO) {
                 // Make sure to use the fully qualified name if there's an ambiguity
                 // or ensure the import is specific enough.
                 com.example.medicina.functions.
                 MedicineFunctions.getAllMedicines()
             }
+
+            if (medicinesFromApi != null) {
+                Log.d("Repository", "getAllMedicines: Fetched ${medicinesFromApi.size} medicines from API. Attempting to cache locally.")
+                // Save/Update the fetched medicines into the local Room database
+                withContext(Dispatchers.IO) { // Perform DB operations on IO dispatcher
+                    try {
+                        for (apiMedicine in medicinesFromApi) {
+                            // Using insertMedicine with OnConflictStrategy.REPLACE acts as an upsert
+                            medicineDao.insertMedicine(apiMedicine)
+                        }
+                        Log.d("Repository", "getAllMedicines: Successfully cached/updated ${medicinesFromApi.size} medicines in local DB.")
+                    } catch (dbException: Exception) {
+                        Log.e("Repository", "getAllMedicines: Error caching medicines in local DB: ${dbException.message}", dbException)
+                        // Decide how to handle this:
+                        // - Still emit medicinesFromApi (UI gets fresh data, cache might be stale/incomplete)
+                        // - Emit an error or empty list if local caching is critical
+                        // For now, we'll still emit API data.
+                    }
+                }
+            } else {
+                Log.d("Repository", "getAllMedicines: API returned null or empty list.")
+            }
+
+            // Emit the fetched list (or empty if null) from the API
+            // The UI will get the fresh data from the API,
+            // and the local DB is updated in the background.
             emit(medicinesFromApi ?: emptyList())
-        // Emit the fetched list (or empty if null)
-        } catch (e: Exception) {
-            Log.e("Repository", "Error fetching medicines from API in Repository: ${e.message}", e)
-            emit(emptyList())
-        // Emit an empty list in case of an error
+
+        } catch (apiException: Exception) {
+            Log.e("Repository", "getAllMedicines: Error fetching medicines from API: ${apiException.message}", apiException)
+            // Optionally, try to fetch from local DB as a fallback if API fails
+            // For now, emitting empty list on API failure.
+            // val localMedicines = medicineDao.getAllMedicines().first() // This would be a blocking call if used here, or emit from it
+            // emit(localMedicines)
+            emit(emptyList()) // Emit an empty list in case of API error
         }
-    }.catch { e -> // Catch exceptions from the flow itself or downstream
-        Log.e("Repository", "Exception in getAllMedicines flow: ${e.message}", e)
+    }.catch { e -> // Catch exceptions from the flow itself or downstream (less likely here)
+        Log.e("Repository", "getAllMedicines: Exception in flow: ${e.message}", e)
         emit(emptyList()) // Fallback to empty list
     }
-    suspend fun getMedicineById(id: Int): Medicine? = medicineDao.getMedicineById(id)
 
     suspend fun upsertMedicine(medicineToUpsert: Medicine): Long {
         val serverAssignedId: Long = withContext(Dispatchers.IO) {
@@ -151,8 +179,29 @@ object Repository {
         }
     }
 
-    suspend fun deleteMedicine(medicineId: Int){
-        medicineDao.deleteMedicine(medicineId)
+    suspend fun deleteMedicine(medicineId: Int): Boolean { // Return boolean for success/failure
+        val serverSuccess = withContext(Dispatchers.IO) {
+            Log.d("Repository", "Attempting to delete medicine ID: $medicineId from server.")
+            MedicineFunctions.deleteMedicineFromServer(medicineId)
+        }
+
+        if (serverSuccess) {
+            Log.d("Repository", "Server delete successful for ID: $medicineId. Deleting from local Room.")
+            try {
+                medicineDao.deleteMedicine(medicineId)
+                Log.d("Repository", "Local Room: Deleted medicine with ID $medicineId")
+                return true // Both server and local delete successful
+            } catch (e: Exception) {
+                Log.e("Repository", "Error deleting from local Room DB after server success for ID $medicineId: ${e.message}", e)
+                // Server delete was successful, but local failed.
+                // This leaves the data in an inconsistent state.
+                // You might want to handle this case specifically (e.g., log for sync later).
+                return false // Indicate local DB error
+            }
+        } else {
+            Log.e("Repository", "Server delete FAILED for ID: $medicineId. Local DB not touched.")
+            return false // Indicate server failure
+        }
     }
 
     // medicine category
