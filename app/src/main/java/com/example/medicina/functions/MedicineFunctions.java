@@ -4,6 +4,7 @@ import com.example.medicina.model.Medicine;
 
 import com.example.medicina.network.ApiService;
 import com.example.medicina.network.RetrofitClient;
+import com.example.medicina.model.UpsertResponse;
 import java.util.List;
 import java.util.Collections;
 import java.io.IOException;
@@ -46,14 +47,42 @@ public class MedicineFunctions {
         }
     }
 
-    public static List<Medicine> readMedicine(String medicineName) {
-        return null;
-    }
-    public static List<Medicine> searchMedicineByCategory(int categoryId) {
-        return null;
-    }
-    public static boolean upsertMedicine(Medicine medicine){
-        return false;
+    public static long upsertMedicine(Medicine medicine) {
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<UpsertResponse> call = apiService.upsertMedicineOnServer(medicine);
+
+        try {
+            Log.d(TAG, "Attempting to upsert medicine: " + (medicine.getId() == null ? "NEW" : "ID " + medicine.getId()) + " - " + medicine.getBrandName());
+            Response<UpsertResponse> response = call.execute(); // Synchronous call
+
+            if (response.isSuccessful() && response.body() != null) {
+                UpsertResponse upsertResponse = response.body();
+                if (upsertResponse.isSuccess() && upsertResponse.getId() != null) {
+                    Log.d(TAG, "Server upsert successful. Message: " + upsertResponse.getMessage() + ". Server ID: " + upsertResponse.getId());
+                    return upsertResponse.getId().longValue(); // Return the ID from the server
+                } else {
+                    Log.e(TAG, "Server upsert reported failure or no ID. Message: " + (upsertResponse.getMessage() != null ? upsertResponse.getMessage() : "N/A"));
+                    return -1L;
+                }
+            } else {
+                String errorBodyString = "N/A";
+                if (response.errorBody() != null) {
+                    try {
+                        errorBodyString = response.errorBody().string();
+                    } catch (IOException e) {
+                        Log.e(TAG, "Error reading error body string", e);
+                    }
+                }
+                Log.e(TAG, "upsertMedicine API call failed: " + response.code() + " - " + response.message() + ". Error Body: " + errorBodyString);
+                return -1L;
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Network IOException in upsertMedicine: " + e.getMessage(), e);
+            return -1L;
+        } catch (Exception e) { // Catch any other unexpected exceptions
+            Log.e(TAG, "Unexpected exception in upsertMedicine: " + e.getMessage(), e);
+            return -1L;
+        }
     }
 
 }

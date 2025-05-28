@@ -110,12 +110,44 @@ object Repository {
     }
     suspend fun getMedicineById(id: Int): Medicine? = medicineDao.getMedicineById(id)
 
-    suspend fun upsertMedicine(updatedMedicine: Medicine): Long {
-        return if (updatedMedicine.id == null) {
-            medicineDao.insertMedicine(updatedMedicine)
+    suspend fun upsertMedicine(medicineToUpsert: Medicine): Long {
+        val serverAssignedId: Long = withContext(Dispatchers.IO) {
+            Log.d("Repository", "Attempting to upsert to server: ${medicineToUpsert.brandName}")
+            MedicineFunctions.upsertMedicine(medicineToUpsert)
+        }
+
+        if (serverAssignedId != -1L) {
+            Log.d("Repository", "Server upsert successful. Server ID: $serverAssignedId for ${medicineToUpsert.brandName}")
+
+            // Prepare the medicine object for local Room upsert
+            // Use the ID returned by the server, especially for inserts
+            val medicineForRoom: Medicine
+            if (medicineToUpsert.id == null) { // It was an insert
+                medicineForRoom = medicineToUpsert.copy(id = serverAssignedId.toInt())
+                Log.d("Repository", "New medicine, using server ID $serverAssignedId for local Room.")
+            } else { // It was an update
+                // Ensure the ID matches, though serverAssignedId should be the same as medicineToUpsert.id
+                medicineForRoom = medicineToUpsert.copy(id = serverAssignedId.toInt())
+                Log.d("Repository", "Updated medicine, server ID $serverAssignedId confirmed for local Room.")
+            }
+
+            // Now upsert to local Room database
+            return try {
+                if (medicineDao.getMedicineById(medicineForRoom.id!!) != null) { // Check if exists for update
+                    medicineDao.updateMedicine(medicineForRoom)
+                    Log.d("Repository", "Local Room: Updated medicine with ID ${medicineForRoom.id}")
+                } else {
+                    medicineDao.insertMedicine(medicineForRoom) // This might fail if ID already exists and it's not an update
+                    Log.d("Repository", "Local Room: Inserted new medicine with ID ${medicineForRoom.id}")
+                }
+                serverAssignedId // Return the ID from the server
+            } catch (e: Exception) {
+                Log.e("Repository", "Error upserting to local Room DB after server success: ${e.message}", e)
+                -1L // Indicate local DB error, even if server was fine
+            }
         } else {
-            medicineDao.updateMedicine(updatedMedicine)
-            updatedMedicine.id.toLong()
+            Log.e("Repository", "Server upsert FAILED for: ${medicineToUpsert.brandName}. Local DB not touched.")
+            return -1L // Indicate server failure
         }
     }
 
