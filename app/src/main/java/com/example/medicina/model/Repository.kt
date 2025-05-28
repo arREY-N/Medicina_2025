@@ -4,7 +4,10 @@ import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import com.example.medicina.database.*
+import com.example.medicina.functions.AccountFunctions
+import com.example.medicina.functions.CategoryFunctions
 import com.example.medicina.functions.MedicineFunctions
+import com.example.medicina.functions.OrderFunctions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -242,21 +245,77 @@ object Repository {
 
     // CATEGORIES
 
-    fun getAllCategories(): Flow<List<Category>> = categoryDao.getAllCategories()
-
     suspend fun getCategoryById(id: Int): Category? = categoryDao.getCategoryById(id)
 
-    suspend fun upsertCategory(updatedCategory: Category): Long {
-        return if (updatedCategory.id == null) {
-            categoryDao.insertCategory(updatedCategory)
+
+    fun getAllCategories(): Flow<List<Category>> = flow {
+        try {
+            Log.d("Repository", "getAllCategories: Fetching from API")
+            val categoriesFromApi = withContext(Dispatchers.IO) {
+                CategoryFunctions.getAllCategories()
+            }
+            categoriesFromApi?.let { apiList ->
+                Log.d("Repository", "getAllCategories: Fetched ${apiList.size} from API. Caching to Room.")
+                withContext(Dispatchers.IO) {
+                    // Assuming categoryDao.insertCategory has OnConflictStrategy.REPLACE
+                    apiList.forEach { categoryDao.insertCategory(it) }
+                }
+            }
+            emit(categoriesFromApi ?: emptyList())
+        } catch (e: Exception) {
+            Log.e("Repository", "Error fetching categories from API: ${e.message}", e)
+            emit(emptyList())
+        }
+    }.catch { e ->
+        Log.e("Repository", "Exception in getAllCategories flow: ${e.message}", e)
+        emit(emptyList())
+    }
+
+    suspend fun upsertCategory(categoryToUpsert: Category): Long {
+        val serverAssignedId = withContext(Dispatchers.IO) {
+            Log.d("Repository", "upsertCategory: Attempting API upsert for ${categoryToUpsert.categoryName}")
+            CategoryFunctions.upsertCategory(categoryToUpsert)
+        }
+
+        if (serverAssignedId != -1L) {
+            Log.d("Repository", "upsertCategory: API success, server ID $serverAssignedId for ${categoryToUpsert.categoryName}")
+            val categoryForRoom: Category = categoryToUpsert.copy(id = serverAssignedId.toInt())
+
+            return try {
+                // Assuming categoryDao.insertCategory uses OnConflictStrategy.REPLACE
+                categoryDao.insertCategory(categoryForRoom)
+                Log.d("Repository", "upsertCategory: Room upsert successful for ID $serverAssignedId")
+                serverAssignedId
+            } catch (e: Exception) {
+                Log.e("Repository", "upsertCategory: Room upsert failed for ID $serverAssignedId after API success: ${e.message}", e)
+                -1L
+            }
         } else {
-            categoryDao.updateCategory(updatedCategory)
-            updatedCategory.id.toLong()
+            Log.e("Repository", "upsertCategory: API upsert FAILED for ${categoryToUpsert.categoryName}")
+            return -1L
         }
     }
 
-    suspend fun deleteCategory(categoryId: Int){
-        categoryDao.deleteCategory(categoryId)
+    suspend fun deleteCategory(categoryId: Int): Boolean {
+        val serverSuccess = withContext(Dispatchers.IO) {
+            Log.d("Repository", "deleteCategory: Attempting API delete for ID $categoryId")
+            CategoryFunctions.deleteCategory(categoryId)
+        }
+
+        if (serverSuccess) {
+            Log.d("Repository", "deleteCategory: API delete successful for ID $categoryId. Deleting from Room.")
+            return try {
+                categoryDao.deleteCategory(categoryId)
+                Log.d("Repository", "deleteCategory: Room delete successful for ID $categoryId")
+                true
+            } catch (e: Exception) {
+                Log.e("Repository", "deleteCategory: Room delete failed for ID $categoryId after API success: ${e.message}", e)
+                false
+            }
+        } else {
+            Log.e("Repository", "deleteCategory: API delete FAILED for ID $categoryId.")
+            return false
+        }
     }
 
 
@@ -288,21 +347,75 @@ object Repository {
 
     // ORDERS
 
-    fun getAllOrders(): Flow<List<Order>> = orderDao.getAlOrders()
-
+    fun getAllOrders(): Flow<List<Order>> = flow {
+        try {
+            Log.d("Repository", "getAllOrders: Fetching from API")
+            val ordersFromApi = withContext(Dispatchers.IO) {
+                OrderFunctions.getAllOrders()
+            }
+            ordersFromApi?.let { apiList ->
+                Log.d("Repository", "getAllOrders: Fetched ${apiList.size} from API. Caching to Room.")
+                withContext(Dispatchers.IO) {
+                    // Assuming orderDao.insertOrder has OnConflictStrategy.REPLACE
+                    apiList.forEach { orderDao.insertOrder(it) }
+                }
+            }
+            emit(ordersFromApi ?: emptyList())
+        } catch (e: Exception) {
+            Log.e("Repository", "Error fetching orders from API: ${e.message}", e)
+            emit(emptyList())
+        }
+    }.catch { e ->
+        Log.e("Repository", "Exception in getAllOrders flow: ${e.message}", e)
+        emit(emptyList())
+    }
     suspend fun getOrderById(id: Int): Order? = orderDao.getOrderById(id)
 
-    suspend fun upsertOrder(upsertOrder: Order): Long {
-        return if (upsertOrder.id == null){
-            orderDao.insertOrder(upsertOrder)
+    suspend fun upsertOrder(orderToUpsert: Order): Long {
+        val serverAssignedId = withContext(Dispatchers.IO) {
+            Log.d("Repository", "upsertOrder: Attempting API upsert for order ID: ${orderToUpsert.id ?: "NEW"}")
+            OrderFunctions.upsertOrder(orderToUpsert)
+        }
+
+        if (serverAssignedId != -1L) {
+            Log.d("Repository", "upsertOrder: API success, server ID $serverAssignedId")
+            val orderForRoom: Order = orderToUpsert.copy(id = serverAssignedId.toInt())
+
+            return try {
+                // Assuming orderDao.insertOrder uses OnConflictStrategy.REPLACE
+                orderDao.insertOrder(orderForRoom)
+                Log.d("Repository", "upsertOrder: Room upsert successful for ID $serverAssignedId")
+                serverAssignedId
+            } catch (e: Exception) {
+                Log.e("Repository", "upsertOrder: Room upsert failed for ID $serverAssignedId after API success: ${e.message}", e)
+                -1L
+            }
         } else {
-            orderDao.updateOrder(upsertOrder)
-            upsertOrder.id.toLong()
+            Log.e("Repository", "upsertOrder: API upsert FAILED for order ID: ${orderToUpsert.id ?: "NEW"}")
+            return -1L
         }
     }
 
-    suspend fun deleteOrder(orderId: Int){
-        orderDao.deleteOrder(orderId)
+    suspend fun deleteOrder(orderId: Int): Boolean {
+        val serverSuccess = withContext(Dispatchers.IO) {
+            Log.d("Repository", "deleteOrder: Attempting API delete for ID $orderId")
+            OrderFunctions.deleteOrder(orderId)
+        }
+
+        if (serverSuccess) {
+            Log.d("Repository", "deleteOrder: API delete successful for ID $orderId. Deleting from Room.")
+            return try {
+                orderDao.deleteOrder(orderId) // Make sure this DAO method exists
+                Log.d("Repository", "deleteOrder: Room delete successful for ID $orderId")
+                true
+            } catch (e: Exception) {
+                Log.e("Repository", "deleteOrder: Room delete failed for ID $orderId after API success: ${e.message}", e)
+                false
+            }
+        } else {
+            Log.e("Repository", "deleteOrder: API delete FAILED for ID $orderId.")
+            return false
+        }
     }
 
 
@@ -316,7 +429,6 @@ object Repository {
     // ACCOUNTS
 
 
-    fun getAllAccounts(): Flow<List<Account>> = accountDao.getAllAccounts()
 
     @JvmStatic
     fun getAccountsAtOnce(): List<Account> = runBlocking {
@@ -325,18 +437,84 @@ object Repository {
 
     suspend fun getAccountById(id: Int): Account? = accountDao.getAccountById(id)
 
-    suspend fun upsertAccount(updatedAccount: Account): Long {
-        return if(updatedAccount.id == null) {
-            accountDao.insertAccount(updatedAccount)
+    suspend fun upsertAccount(accountToUpsert: Account): Long {
+        val serverAssignedId = withContext(Dispatchers.IO) {
+            Log.d("Repository", "upsertAccount: Attempting API upsert for ${accountToUpsert.username}")
+            AccountFunctions.upsertAccount(accountToUpsert) // accountToUpsert is your new Account.kt type
+        }
+
+        if (serverAssignedId != -1L) {
+            Log.d("Repository", "upsertAccount: API success, server ID $serverAssignedId for ${accountToUpsert.username}")
+
+            // Create accountForRoom using the data from accountToUpsert and the serverAssignedId
+            // Since Account is a data class, .copy() is the cleanest way.
+            val accountForRoom: Account = accountToUpsert.copy(id = serverAssignedId.toInt())
+
+            Log.d("Repository", "upsertAccount: Preparing to upsert to local Room: ID ${accountForRoom.id} - User: ${accountForRoom.username}")
+
+            return try {
+                // Assuming accountDao.insertAccount uses OnConflictStrategy.REPLACE for upsert behavior
+                accountDao.insertAccount(accountForRoom)
+                Log.d("Repository", "upsertAccount: Room upsert successful for ID $serverAssignedId")
+                serverAssignedId // Return the ID from the server
+            } catch (e: Exception) {
+                Log.e("Repository", "upsertAccount: Room upsert failed for ID $serverAssignedId after API success: ${e.message}", e)
+                -1L // Indicate local DB error
+            }
         } else {
-            accountDao.updateAccount(updatedAccount)
-            updatedAccount.id.toLong()
+            Log.e("Repository", "upsertAccount: API upsert FAILED for ${accountToUpsert.username}")
+            return -1L // Indicate server failure
         }
     }
 
-    suspend fun deleteAccount(id: Int){
-        accountDao.deleteAccount(id)
+    fun getAllAccounts(): Flow<List<Account>> = flow {
+        try {
+            Log.d("Repository", "getAllAccounts: Fetching from API")
+            val accountsFromApi = withContext(Dispatchers.IO) {
+                AccountFunctions.getAllAccounts()
+            }
+            accountsFromApi?.let { apiList ->
+                Log.d("Repository", "getAllAccounts: Fetched ${apiList.size} from API. Caching to Room.")
+                withContext(Dispatchers.IO) {
+                    // Assuming accountDao.insertAccount has OnConflictStrategy.REPLACE
+                    apiList.forEach { accountDao.insertAccount(it) }
+                }
+            }
+            emit(accountsFromApi ?: emptyList())
+        } catch (e: Exception) {
+            Log.e("Repository", "Error fetching accounts from API: ${e.message}", e)
+            emit(emptyList()) // Fallback or emit from local DB if preferred
+        }
+    }.catch { e ->
+        Log.e("Repository", "Exception in getAllAccounts flow: ${e.message}", e)
+        emit(emptyList())
     }
+
+
+
+
+    suspend fun deleteAccount(id: Int): Boolean {
+        val serverSuccess = withContext(Dispatchers.IO) {
+            Log.d("Repository", "deleteAccount: Attempting API delete for ID $id")
+            AccountFunctions.deleteAccount(id)
+        }
+
+        if (serverSuccess) {
+            Log.d("Repository", "deleteAccount: API delete successful for ID $id. Deleting from Room.")
+            return try {
+                accountDao.deleteAccount(id)
+                Log.d("Repository", "deleteAccount: Room delete successful for ID $id")
+                true
+            } catch (e: Exception) {
+                Log.e("Repository", "deleteAccount: Room delete failed for ID $id after API success: ${e.message}", e)
+                false // Local DB error
+            }
+        } else {
+            Log.e("Repository", "deleteAccount: API delete FAILED for ID $id.")
+            return false // Server failure
+        }
+    }
+
 
 
     // DESIGNATION

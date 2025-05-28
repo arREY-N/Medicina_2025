@@ -5,11 +5,25 @@ import static java.util.regex.Pattern.matches;
 import com.example.medicina.model.Account;
 import com.example.medicina.model.Repository;
 import java.util.List;
+import android.util.Log;
+import com.example.medicina.model.Account;
+import com.example.medicina.model.UpsertResponse; // Reusing this model
+import com.example.medicina.network.ApiService;
+import com.example.medicina.network.RetrofitClient;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import retrofit2.Call;
+import retrofit2.Response;
 
 import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.flow.StateFlow;
 
 public class AccountFunctions {
+
+    private static final String TAG = "AccountFunctions";
+
     public static Account handleLogin(String username, String password) throws MedicinaException {
         List<Account> accounts = Repository.getAccountsAtOnce();
 
@@ -133,4 +147,79 @@ public class AccountFunctions {
 
         return true;
     }
+
+
+    public static List<Account> getAllAccounts() {
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<List<Account>> call = apiService.getAllAccountsFromServer();
+        try {
+            Response<List<Account>> response = call.execute();
+            if (response.isSuccessful() && response.body() != null) {
+                Log.d(TAG, "Successfully fetched " + response.body().size() + " accounts from API.");
+                return response.body();
+            } else {
+                Log.e(TAG, "getAllAccounts API call failed: " + response.code() + " - " + response.message());
+                if (response.errorBody() != null) Log.e(TAG, "Error body: " + response.errorBody().string());
+                return Collections.emptyList();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in getAllAccounts: " + e.getMessage(), e);
+            return Collections.emptyList();
+        }
+    }
+
+    public static long upsertAccount(Account account) { // Takes your Account object
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<UpsertResponse> call = apiService.upsertAccountOnServer(account); // Sends your Account object
+        try {
+            Log.d(TAG, "Attempting to upsert account: " + account.getUsername()); // Use getter if fields are private
+            Response<UpsertResponse> response = call.execute();
+            if (response.isSuccessful() && response.body() != null) {
+                UpsertResponse upsertResponse = response.body();
+                if (upsertResponse.isSuccess() && upsertResponse.getId() != null) {
+                    Log.d(TAG, "Server account upsert successful. ID: " + upsertResponse.getId());
+                    return upsertResponse.getId().longValue();
+                } else {
+                    Log.e(TAG, "Server account upsert reported failure. Message: " + (upsertResponse.getMessage() != null ? upsertResponse.getMessage() : "N/A"));
+                    return -1L;
+                }
+            } else {
+                Log.e(TAG, "upsertAccount API call failed: " + response.code() + " - " + response.message());
+                if (response.errorBody() != null) Log.e(TAG, "Error body: " + response.errorBody().string());
+                return -1L;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in upsertAccount: " + e.getMessage(), e);
+            return -1L;
+        }
+    }
+
+    public static boolean deleteAccount(int accountId) {
+        ApiService apiService = RetrofitClient.getApiService();
+        Call<UpsertResponse> call = apiService.deleteAccountOnServer(accountId);
+        try {
+            Log.d(TAG, "Attempting to delete account ID: " + accountId);
+            Response<UpsertResponse> response = call.execute();
+            if (response.isSuccessful() && response.body() != null) {
+                UpsertResponse deleteResponse = response.body();
+                if (deleteResponse.isSuccess()) {
+                    Log.d(TAG, "Server account delete successful for ID " + accountId);
+                    return true;
+                } else {
+                    Log.e(TAG, "Server account delete reported failure for ID " + accountId + ". Message: " + (deleteResponse.getMessage() != null ? deleteResponse.getMessage() : "N/A"));
+                    return false;
+                }
+            } else {
+                Log.e(TAG, "deleteAccount API call failed: " + response.code() + " - " + response.message());
+                if (response.errorBody() != null) Log.e(TAG, "Error body: " + response.errorBody().string());
+                return false;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception in deleteAccount: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+
+
 }
