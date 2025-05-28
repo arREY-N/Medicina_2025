@@ -173,7 +173,8 @@ fun TopNavigation(
     isHome: Boolean = false,
     pageTitle: String = "Medicina",
     navController: NavHostController,
-    showMenu: Boolean = true
+    showMenu: Boolean = true,
+    isUpsert: Boolean = false
 ) {
     val context = LocalContext.current
     val currentRoute = navController.currentBackStackEntry?.destination?.route
@@ -203,7 +204,7 @@ fun TopNavigation(
                     },
                 color = Color.Transparent
             ) {
-                if(showMenu){
+                if(showMenu && !isUpsert){
                     Button(
                         onClick = {
                             navController.navigate(Screen.MainMenu.route)

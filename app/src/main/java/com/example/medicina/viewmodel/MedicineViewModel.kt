@@ -109,6 +109,12 @@ class MedicineViewModel : ViewModel() {
     }
 
     fun validateScreen(){
+        medicines.value.forEach {
+            if(it.brandName == _upsertMedicine.value.brandName){
+                throw MedicinaException("Medicine already exists")
+            }
+        }
+
         if(_upsertMedicine.value.brandName.trim().isEmpty()){
             throw MedicinaException("Brand name cannot be empty")
         }

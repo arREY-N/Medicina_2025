@@ -191,6 +191,16 @@ fun MainScreen(){
         else -> false to "Medicina"
     }
 
+    val isUpsert = when (currentRoute) {
+        Screen.UpsertMedicine.route,
+        Screen.UpsertGeneric.route,
+        Screen.UpsertCategory.route,
+        Screen.UpsertSupplier.route,
+        Screen.UpsertOrder.route -> true
+        else -> false
+    }
+
+
     val bottomBarRoutes = listOf(
         "home",
         "search",
@@ -218,7 +228,8 @@ fun MainScreen(){
                     isHome = isHome,
                     pageTitle = pageTitle,
                     navController,
-                    showMenu = !(currentRoute == Screen.MainMenu.route)
+                    showMenu = !(currentRoute == Screen.MainMenu.route),
+                    isUpsert = isUpsert
                 )
             }
         },

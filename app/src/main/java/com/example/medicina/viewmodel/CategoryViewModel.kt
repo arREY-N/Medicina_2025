@@ -76,13 +76,26 @@ class CategoryViewModel: ViewModel() {
     }
 
     fun validateScreen(){
+        categories.value.forEach {
+            if(it.categoryName == upsertCategory.value.categoryName){
+                throw MedicinaException("Category already exists")
+            }
+            if(it.hexColor == upsertCategory.value.hexColor){
+                throw MedicinaException("Color already in use")
+            }
+        }
+
         if(upsertCategory.value.categoryName.trim().isEmpty()){
             throw MedicinaException("Category name cannot be empty")
         }
 
         val regex = Regex("^#(\\d{5}|[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
 
-        if(!regex.matches(upsertCategory.value.hexColor) || upsertCategory.value.hexColor.isEmpty() || upsertCategory.value.hexColor == "#9E9E9E"){
+        if(
+            !regex.matches(upsertCategory.value.hexColor) ||
+            upsertCategory.value.hexColor.isEmpty() ||
+            upsertCategory.value.hexColor == "#9E9E9E"
+            ) {
             throw MedicinaException("Color must be in hexcode (#000000)")
         }
     }

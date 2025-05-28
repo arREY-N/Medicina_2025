@@ -77,6 +77,12 @@ class GenericViewModel: ViewModel() {
     }
 
     fun validateScreen(){
+        generics.value.forEach {
+            if(it.genericName == upsertGeneric.value.genericName){
+                throw MedicinaException("Generic already exists")
+            }
+        }
+
         if(_upsertGeneric.value.genericName.isEmpty()){
             throw MedicinaException("Generic name cannot be empty")
         }

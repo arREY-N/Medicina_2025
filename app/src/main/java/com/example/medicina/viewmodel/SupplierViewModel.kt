@@ -67,6 +67,12 @@ class SupplierViewModel : ViewModel() {
     }
 
     fun validateScreen(){
+        suppliers.value.forEach{
+            if(it.name == upsertSupplier.value.name){
+                throw MedicinaException("Supplier already exists")
+            }
+        }
+
         if(upsertSupplier.value.name.trim() == ""){
             throw MedicinaException("Supplier name cannot be empty")
         }
